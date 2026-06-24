@@ -32,6 +32,8 @@ class MainWindow(QWidget):
 
         self._settings_init()
         self._connect_signal_and_slot()
+
+        # 发送设置以完成信号
         self.settings_inited.emit(self.settings)
 
 
@@ -47,9 +49,6 @@ class MainWindow(QWidget):
         self.song_info_panel_and_player_controls_layout.addWidget(self.song_info_panel)
         self.song_info_panel_and_player_controls_layout.addWidget(self.player_controls)
 
-        # 链接信号和槽
-        self.player_controls.metadata_changed.connect(self.song_info_panel.on_metadata_changed)
-
         self.main_layout.addLayout(self.song_info_panel_and_player_controls_layout)
 
     def _settings_init(self):
@@ -58,6 +57,10 @@ class MainWindow(QWidget):
 
     def _playlist_view_init(self):
         self.playlist_view = PlayListView()
+        self.main_layout.addWidget(self.playlist_view)
 
     def _connect_signal_and_slot(self):
+        # 切换音频时动态获取音频信息
+        self.player_controls.metadata_changed.connect(self.song_info_panel.on_metadata_changed)
+        #
         self.settings_inited.connect(self.playlist_view.init_with_settings)
