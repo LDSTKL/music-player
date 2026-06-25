@@ -33,7 +33,7 @@ class TitleBar(QWidget):
         if event.button() == Qt.MouseButton.LeftButton:
             child = self.childAt(event.pos())
             # 只有点击空白区域才拖动
-            if child is None:
+            if child is None or child is self.label:
                 self.mouse_pressed = True
                 self.relative_pos = (event.globalPosition().x() - self.parent.x(), event.globalPosition().y() - self.parent.y())  # 窗口和鼠标的相对坐标
 

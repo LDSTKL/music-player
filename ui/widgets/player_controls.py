@@ -164,6 +164,11 @@ class PlayerControls(QWidget):
         if status==QMediaPlayer.MediaStatus.EndOfMedia:
             self.pause()
 
+    @Slot()
+    def play_selected_music(self,path:str):
+        self.player.setSource(QUrl.fromLocalFile(path))
+        self.play()
+
 
 
 

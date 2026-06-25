@@ -46,8 +46,8 @@ class MainWindow(QWidget):
         self.song_info_panel_and_player_controls_layout = QHBoxLayout()
         self.song_info_panel = SongInfoPanel(self)
         self.player_controls = PlayerControls(self)
-        self.song_info_panel_and_player_controls_layout.addWidget(self.song_info_panel)
-        self.song_info_panel_and_player_controls_layout.addWidget(self.player_controls)
+        self.song_info_panel_and_player_controls_layout.addWidget(self.song_info_panel,stretch=1)
+        self.song_info_panel_and_player_controls_layout.addWidget(self.player_controls,stretch=2)
 
         self.main_layout.addLayout(self.song_info_panel_and_player_controls_layout)
 
@@ -64,3 +64,5 @@ class MainWindow(QWidget):
         self.player_controls.metadata_changed.connect(self.song_info_panel.on_metadata_changed)
         #
         self.settings_inited.connect(self.playlist_view.init_with_settings)
+        #
+        self.playlist_view.play_selected.connect(self.player_controls.play_selected_music)
