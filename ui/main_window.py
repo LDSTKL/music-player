@@ -8,6 +8,7 @@ from ui.widgets.playlist_view import PlayListView
 from ui.widgets.settings import Settings
 from ui.widgets.song_info_panel import SongInfoPanel
 from ui.widgets.titlebar import TitleBar
+from utils.database_utils import DataBaseUtils
 
 
 class MainWindow(QWidget):
@@ -15,8 +16,12 @@ class MainWindow(QWidget):
 
     def __init__(self):
         super().__init__()
-        self._window_init()
-        self._ui_init()
+        self._database_init() # 数据库初始化
+        self._window_init() # 窗体初始化
+        self._ui_init() # 窗体内UI初始化
+
+    def _database_init(self):
+        DataBaseUtils.init_database()
 
     def _window_init(self):
         '''初始化窗体'''

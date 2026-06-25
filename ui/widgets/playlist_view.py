@@ -10,8 +10,7 @@ from PySide6.QtWidgets import QWidget, QLineEdit, QListWidget, QListWidgetItem, 
     QHeaderView, QSizePolicy, QAbstractItemView
 
 from utils.audio_metadata_utils import AudioMetaDataUtils
-
-
+from utils.database_utils import DataBaseUtils
 
 store_full_path_role = Qt.ItemDataRole.UserRole
 
@@ -66,7 +65,6 @@ class PlayListView(QWidget):
         scan_path = line_edit.text()
         self.scaner = MusicScanner(scan_path)
         self.scaner.add_item.connect(self.add_item)
-        self.scaner.finished.connect(self.scan_finished)
         self.scaner.start()
 
     @Slot()
@@ -83,10 +81,7 @@ class PlayListView(QWidget):
         # 将这一行的三个 Item 添加到模型
         self.data_model.appendRow([item_title, item_artist, item_album])
 
-    @Slot()
-    def scan_finished(self):
-        # 
-        pass
+
 
 
 
@@ -106,13 +101,36 @@ class MusicScanner(QThread):
         self.scan_path = scan_path
 
     def run(self):
-        for file in os.listdir(self.scan_path):
-            if file.endswith('.mp3'):
-                full_path = os.path.join(self.scan_path, file)
-                metadata = AudioMetaDataUtils.get_music_meta(full_path)
-                self.add_item.emit(metadata,full_path)
+        # 数据库中有数据,读取数据库
+        conn = DataBaseUtils.get_new_connection()
+        try:
+            music_list = DataBaseUtils.select_all_music(conn)
 
-        self.finished.emit()
+            if len(music_list)>0:
+                for music in music_list:
+                    metadata={
+                        'title':music[2],
+                        'artist':music[3],
+                        'album':music[4]
+                    }
+                    full_path = music[1]
+                    self.add_item.emit(metadata, full_path)
+            else:
+                # 数据库中没有数据,扫描文件夹
+                for file in os.listdir(self.scan_path):
+                    if file.endswith('.mp3'):
+                        full_path = os.path.join(self.scan_path, file)
+                        metadata = AudioMetaDataUtils.get_music_meta(full_path)
+                        # 添加数据到data_model
+                        self.add_item.emit(metadata,full_path)
+                        # 更新数据库
+                        DataBaseUtils.insert_or_update_music(conn,full_path,metadata['title']
+                                                             ,metadata['artist']
+                                                             ,metadata['album']
+                                                             ,metadata['genre']
+                                                             ,metadata['year'])
+        finally:
+            conn.close()
 
 
 
