@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QWidget, QApplication, QPushButton, QVBoxLayout, Q
     QStyleOptionSlider
 
 from ui.widgets.song_info_panel import SongInfoPanel
+from utils.database_utils import DataBaseUtils
 
 
 class EnhancedSlider(QSlider):
@@ -56,8 +57,8 @@ class PlayerControls(QWidget):
 
     def __init__(self,parent=None):
         super().__init__(parent)
-        self.slider_is_pressed =False
-        self.music_list = [r'D:\音乐\周杰伦 - 爱琴海.mp3',r'D:\音乐\许嵩 - 如果当时.mp3']
+        self.music_list = []
+        self.cur_music_index = 0
         self._ui_init()
         self._player_init()
         self._connect_slot()
@@ -80,9 +81,9 @@ class PlayerControls(QWidget):
         self.play_button = QPushButton('>')
         self.play_button.clicked.connect(self.play)
         self.next_media_button = QPushButton('>>')
-        self.next_media_button.clicked.connect(lambda :self.player.setSource(QUrl.fromLocalFile(self.music_list[1])))
+        self.next_media_button.clicked.connect(self.play_next)
         self.prev_media_button = QPushButton('<<')
-        self.prev_media_button.clicked.connect(lambda: self.player.setSource(QUrl.fromLocalFile(self.music_list[0])))
+        self.prev_media_button.clicked.connect(self.play_prev)
         self.volume_button = QPushButton('🔉')
         self.play_mode_button = QPushButton('o')
 
@@ -109,7 +110,6 @@ class PlayerControls(QWidget):
         self.player = QMediaPlayer()
         self.audioOutput = QAudioOutput()
         self.player.setAudioOutput(self.audioOutput)
-        self.player.setSource(QUrl.fromLocalFile(self.music_list[0]))
         self.audioOutput.setVolume(0.5)
         # QMediaPlayer 是异步加载媒体,此时获取duration()为0,因此需要利用durationChanged信号
         # 而且利用信号,对后续切换音乐的功能开发奠定了基础
@@ -150,6 +150,22 @@ class PlayerControls(QWidget):
         self.play_button.hide()
 
     @Slot()
+    def play_next(self):
+        self.cur_music_index += 1
+        self.player.setSource(QUrl.fromLocalFile(self.music_list[self.cur_music_index]) )
+        self.player.play()
+        self.pause_button.show()
+        self.play_button.hide()
+
+    @Slot()
+    def play_prev(self):
+        self.cur_music_index-=1
+        self.player.setSource(QUrl.fromLocalFile(self.music_list[self.cur_music_index]))
+        self.player.play()
+        self.pause_button.show()
+        self.play_button.hide()
+
+    @Slot()
     def update_slider_when_position_changed(self,p):
         '''如果用户在拖动滑块,就不随着媒体播放更新滑块,避免滑块乱跳'''
         if not self.slider.isSliderDown():
@@ -157,15 +173,28 @@ class PlayerControls(QWidget):
 
     @Slot()
     def update_player_when_slider_released(self):
+        '''滑动滑块调整音乐播放进度'''
         self.player.setPosition(self.slider.value())
 
     @Slot()
     def media_status_changed(self,status:QMediaPlayer.MediaStatus):
+        '''处理播放结束后后续操作,与播放方式有关'''
         if status==QMediaPlayer.MediaStatus.EndOfMedia:
             self.pause()
 
     @Slot()
-    def play_selected_music(self,path:str):
+    def play_selected_music(self,path:str,music_list_id:int):
+        '''此信号用于播放列表双击播放时'''
+        if music_list_id==-1:
+            try:
+                conn = DataBaseUtils.get_new_connection()
+                list = DataBaseUtils.select_all_music(conn)
+                for index,music in enumerate(list):
+                    self.music_list.append(music[1])
+                    if path==music[1]:
+                        self.cur_music_index = index
+            finally:
+                conn.close()
         self.player.setSource(QUrl.fromLocalFile(path))
         self.play()
 

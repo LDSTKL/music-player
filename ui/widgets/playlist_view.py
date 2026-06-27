@@ -13,9 +13,10 @@ from utils.audio_metadata_utils import AudioMetaDataUtils
 from utils.database_utils import DataBaseUtils
 
 store_full_path_role = Qt.ItemDataRole.UserRole
+store_music_list_role = Qt.ItemDataRole.UserRole + 1
 
 class PlayListView(QWidget):
-    play_selected= Signal(str)
+    play_selected= Signal(str,int)
     def __init__(self,parent=None):
         super().__init__(parent)
         self._ui_init()
@@ -53,7 +54,8 @@ class PlayListView(QWidget):
         title = index.siblingAtColumn(0)
         item = self.data_model.itemFromIndex(title)
         path = item.data(store_full_path_role) # 根据role拿到保存的数据
-        self.play_selected.emit(path)
+        music_list = item.data(store_music_list_role) # 根据role拿到保存的数据
+        self.play_selected.emit(path,music_list)
 
 
     @Slot()
@@ -75,6 +77,7 @@ class PlayListView(QWidget):
 
         # ⚠️ 关键：将绝对路径存储在第一列的 UserRole 中
         item_title.setData(full_path, store_full_path_role)
+        item_title.setData(-1, store_music_list_role)
         # 将这一行的三个 Item 添加到模型
         self.data_model.appendRow([item_title, item_artist, item_album])
 
