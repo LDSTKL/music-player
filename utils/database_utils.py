@@ -29,7 +29,8 @@ class DataBaseUtils:
                     artist TEXT,
                     album TEXT,
                     genre TEXT,
-                    year INTEGER
+                    year INTEGER,
+                    is_favorite INTEGER DEFAULT 0
                 )
             """)
 
@@ -37,6 +38,7 @@ class DataBaseUtils:
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_title ON music_library(title)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_artist ON music_library(artist)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_album ON music_library(album)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_is_favorite ON music_library(is_favorite);")
 
             # 创建播放列表表
             cursor.execute("""

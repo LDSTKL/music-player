@@ -46,6 +46,7 @@ class SongInfoPanel(QWidget):
 
     @Slot()
     def on_metadata_changed(self,player:QMediaPlayer):
+        '''播放歌曲前动态加载歌曲元信息'''
         self.metadate = player.metaData()
 
         # 歌曲名
