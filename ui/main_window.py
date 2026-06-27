@@ -31,6 +31,7 @@ class MainWindow(QWidget):
     def _ui_init(self):
         '''初始化UI'''
         self.main_layout = QVBoxLayout(self)  # 主要布局,垂直布局
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
         self._titlebar_init()
         self._playlist_view_init()
         self._song_info_panel_and_playercontrols_init()

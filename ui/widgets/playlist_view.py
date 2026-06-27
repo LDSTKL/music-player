@@ -30,7 +30,7 @@ class PlayListView(QWidget):
         # 设置表头标签
         self.data_model.setHorizontalHeaderLabels(["歌曲名", "歌手", "专辑"])
         self.table_view = QTableView()
-        self.table_view.setModel(self.data_model)
+
         # 可选：隐藏左侧的行号列
         # self.table_view.verticalHeader().hide()
         # 可选：让列宽自适应内容
@@ -56,15 +56,14 @@ class PlayListView(QWidget):
         self.play_selected.emit(path)
 
 
-
-
     @Slot()
     def init_with_settings(self,settings):
-        '''根据设置的扫描目录进行歌曲扫描'''
+        '''根据设置的扫描目录进行异步歌曲扫描'''
         line_edit:QLineEdit = settings.setting_scan_dir_lineedit
         scan_path = line_edit.text()
         self.scaner = MusicScanner(scan_path)
         self.scaner.add_item.connect(self.add_item)
+        self.scaner.finished.connect(lambda :self.table_view.setModel(self.data_model))
         self.scaner.start()
 
     @Slot()
@@ -76,13 +75,8 @@ class PlayListView(QWidget):
 
         # ⚠️ 关键：将绝对路径存储在第一列的 UserRole 中
         item_title.setData(full_path, store_full_path_role)
-        item_artist.setData(full_path, store_full_path_role)
-        item_album.setData(full_path, store_full_path_role)
         # 将这一行的三个 Item 添加到模型
         self.data_model.appendRow([item_title, item_artist, item_album])
-
-
-
 
 
 
@@ -94,7 +88,7 @@ class PlayListView(QWidget):
 class MusicScanner(QThread):
     # 信号：发送单个文件的元数据
     add_item = Signal(dict,str)
-    finished = Signal()
+    # finished = Signal()  # QThread自带finished信号
 
     def __init__(self, scan_path):
         super().__init__()
