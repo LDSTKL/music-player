@@ -4,11 +4,12 @@
 import sys
 
 import PySide6.QtGui
-from PySide6.QtCore import QUrl, Slot, Qt, QPoint, Signal
+from PySide6.QtCore import QUrl, Slot, Qt, QPoint, Signal, QSortFilterProxyModel
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtWidgets import QWidget, QApplication, QPushButton, QVBoxLayout, QHBoxLayout, QSlider, QStyle, \
     QStyleOptionSlider
 
+from constants.role_constants import RoleConstants
 from ui.widgets.song_info_panel import SongInfoPanel
 from utils.database_utils import DataBaseUtils
 
@@ -151,16 +152,16 @@ class PlayerControls(QWidget):
 
     @Slot()
     def play_next(self):
-        self.cur_music_index += 1
-        self.player.setSource(QUrl.fromLocalFile(self.music_list[self.cur_music_index]) )
+        self.curr_music_index += 1
+        self.player.setSource(QUrl.fromLocalFile(self.music_list[self.curr_music_index]) )
         self.player.play()
         self.pause_button.show()
         self.play_button.hide()
 
     @Slot()
     def play_prev(self):
-        self.cur_music_index-=1
-        self.player.setSource(QUrl.fromLocalFile(self.music_list[self.cur_music_index]))
+        self.curr_music_index-=1
+        self.player.setSource(QUrl.fromLocalFile(self.music_list[self.curr_music_index]))
         self.player.play()
         self.pause_button.show()
         self.play_button.hide()
@@ -182,19 +183,16 @@ class PlayerControls(QWidget):
         if status==QMediaPlayer.MediaStatus.EndOfMedia:
             self.pause()
 
+
+
     @Slot()
-    def play_selected_music(self,path:str,music_list_id:int):
+    def play_selected_music(self,path:str,music_list:list[str]):
         '''此信号用于播放列表双击播放时'''
-        if music_list_id==-1:
-            try:
-                conn = DataBaseUtils.get_new_connection()
-                list = DataBaseUtils.select_all_music(conn)
-                for index,music in enumerate(list):
-                    self.music_list.append(music[1])
-                    if path==music[1]:
-                        self.cur_music_index = index
-            finally:
-                conn.close()
+        # 记录当前播放歌曲在列表中的下标
+        for index,file_path in enumerate(music_list) :
+            if path == file_path:
+                self.curr_music_index = index
+        self.music_list=music_list
         self.player.setSource(QUrl.fromLocalFile(path))
         self.play()
 

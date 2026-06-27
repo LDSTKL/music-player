@@ -95,3 +95,6 @@ class MainWindow(QWidget):
         self.playlist_view.play_selected.connect(self.player_controls.play_selected_music)
 
         self.data_manager.inited_with_settings.connect(self.playlist_view.change_data_model)
+        self.data_manager.change_selected_model.connect(self.playlist_view.change_data_model)
+
+        self.play_lists.change_playlist.connect(self.data_manager.change_model)

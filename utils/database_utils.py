@@ -74,20 +74,21 @@ class DataBaseUtils:
 
     @classmethod
     def insert_or_update_music(cls, conn:sqlite3.Connection, file_path: str, title: str = None, artist: str = None,
-                     album: str = None, genre: str = None, year: int = None):
+                     album: str = None, genre: str = None, year: int = None, is_favorite: int = 0):
         """插入或更新单首音乐信息"""
 
         cursor = conn.cursor()
         try:
             cursor.execute("""
-                  INSERT INTO music_library (file_path, title, artist, album, genre, year)
-                  VALUES (?, ?, ?, ?, ?, ?)
+                  INSERT INTO music_library (file_path, title, artist, album, genre, year, is_favorite)
+                  VALUES (?, ?, ?, ?, ?, ?, ?)
                   ON CONFLICT(file_path) DO UPDATE SET
                       title = excluded.title,
                       artist = excluded.artist,
                       album = excluded.album,
                       genre = excluded.genre,
-                      year = excluded.year
+                      year = excluded.year,
+                      is_favorite = excluded.is_favorite
               """, (file_path, title, artist, album, genre, year))
             # 如果file_path冲突，说明不是新插入的数据，而是更新原来的数据
             conn.commit()
@@ -98,7 +99,7 @@ class DataBaseUtils:
     def select_all_music(cls, conn:sqlite3.Connection)->list[tuple]:
         """获取所有可用的音乐列表"""
         cursor = conn.cursor()
-        cursor.execute("SELECT id, file_path, title, artist, album, genre, year FROM music_library")
+        cursor.execute("SELECT id, file_path, title, artist, album, genre, year, is_favorite FROM music_library")
         return cursor.fetchall()
 
     @classmethod
@@ -138,16 +139,23 @@ class DataBaseUtils:
         except sqlite3.Error as e:
             print(f"添加歌曲到播放列表失败: {e}")
 
+    @classmethod
+    def get_all_playlists(cls, conn: sqlite3.Connection) -> list[tuple]:
+        """获取所有播放列表（用于左侧 playlists 组件展示）"""
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, name, is_default FROM playlists ORDER BY id ASC")
+        return cursor.fetchall()
+
+    @classmethod
+    def get_playlist_music_ids(cls, conn: sqlite3.Connection, playlist_id: int) -> set[int]:
+        """获取指定播放列表包含的所有音乐 ID（用于 ProxyModel 过滤）"""
+        cursor = conn.cursor()
+        cursor.execute("SELECT music_id FROM playlist_items WHERE playlist_id = ?", (playlist_id,))
+        return {row[0] for row in cursor.fetchall()}
+
 
 
 
 if __name__ == '__main__':
-    import os
+    pass
 
-    # 为了测试方便，先删除旧的数据库文件，确保每次运行都是干净的环境
-
-
-
-
-    # 1. 初始化数据库
-    print(type(DataBaseUtils.get_new_connection()))

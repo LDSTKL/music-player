@@ -1,26 +1,31 @@
 import os
 
-from PySide6.QtCore import QSortFilterProxyModel, QThread, Signal, Slot, Qt
+from PySide6.QtCore import QSortFilterProxyModel, QThread, Signal, Slot, Qt, QModelIndex
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from PySide6.QtWidgets import QLineEdit, QWidget
 
+from constants.role_constants import RoleConstants
 from utils.audio_metadata_utils import AudioMetaDataUtils
 from utils.database_utils import DataBaseUtils
 
-store_full_path_role = Qt.ItemDataRole.UserRole
-store_music_list_role = Qt.ItemDataRole.UserRole + 1
+
+
 
 class DataManager(QWidget):
     inited_with_settings = Signal(QSortFilterProxyModel)
+    change_selected_model = Signal(QSortFilterProxyModel)
     def __init__(self):
         super().__init__()
+        self.model_list = []
         self.total_data_model = QStandardItemModel()
         # 设置表头标签
         self.total_data_model.setHorizontalHeaderLabels(["歌曲名", "歌手", "专辑"])
         self.total_music = QSortFilterProxyModel()
         self.total_music.setSourceModel(self.total_data_model)
-        self.favor_music = QSortFilterProxyModel()
+        self.favor_music = FavoriteFilterProxyModel()
         self.favor_music.setSourceModel(self.total_data_model)
+        self.model_list.append(self.total_music)
+        self.model_list.append(self.favor_music)
 
 
     @Slot()
@@ -34,18 +39,27 @@ class DataManager(QWidget):
         self.scaner.start()
 
     @Slot()
-    def add_item(self, metadata: dict, full_path: str):
+    def add_item(self, metadata: dict):
         '''向ItemModel中添加数据'''
         # 创建三个可见列的 Item
         item_title = QStandardItem(metadata['title'])
         item_artist = QStandardItem(metadata['artist'])
         item_album = QStandardItem(metadata['album'])
 
+        item_is_favorate =metadata['is_favorite']
+        item_full_path =metadata['full_path']
+        item_id =metadata['id']
+
         # ⚠️ 关键：将绝对路径存储在第一列的 UserRole 中
-        item_title.setData(full_path, store_full_path_role)
-        item_title.setData(-1, store_music_list_role)
+        item_title.setData(item_full_path, RoleConstants.store_full_path_role)
+        item_title.setData(item_is_favorate, RoleConstants.store_is_favorite_role)
+        item_title.setData(item_id, RoleConstants.store_music_id_role)
         # 将这一行的三个 Item 添加到模型
         self.total_data_model.appendRow([item_title, item_artist, item_album])
+
+    @Slot()
+    def change_model(self,index:QModelIndex):
+        self.change_selected_model.emit(self.model_list[index.row()])
 
 
 '''
@@ -53,7 +67,7 @@ class DataManager(QWidget):
 '''
 class MusicScanner(QThread):
     # 信号：发送单个文件的元数据
-    add_item = Signal(dict, str)
+    add_item = Signal(dict)
 
     # finished = Signal()  # QThread自带finished信号
 
@@ -70,12 +84,14 @@ class MusicScanner(QThread):
             if len(music_list) > 0:
                 for music in music_list:
                     metadata = {
+                        'id':music[0],
+                        'full_path':music[1],
                         'title': music[2],
                         'artist': music[3],
-                        'album': music[4]
+                        'album': music[4],
+                        'is_favorite':music[7]
                     }
-                    full_path = music[1]
-                    self.add_item.emit(metadata, full_path)
+                    self.add_item.emit(metadata)
             else:
                 # 数据库中没有数据,扫描文件夹
                 for file in os.listdir(self.scan_path):
@@ -92,3 +108,26 @@ class MusicScanner(QThread):
                                                              , metadata['year'])
         finally:
             conn.close()
+
+
+class FavoriteFilterProxyModel(QSortFilterProxyModel):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def filterAcceptsRow(self, source_row, source_parent):
+        # 从源模型中获取该行的 is_favorite 数据
+        index = self.sourceModel().index(source_row, 0, source_parent)
+        is_favorite = self.sourceModel().data(index, RoleConstants.store_is_favorite_role)
+
+        # 只返回 is_favorite 为 1 (或 True) 的行
+        return is_favorite == 1
+
+class PlaylistFilterProxyModel(QSortFilterProxyModel):
+    def __init__(self, music_ids: set, parent=None):
+        super().__init__(parent)
+        self.music_ids = music_ids
+
+    def filterAcceptsRow(self, source_row, source_parent):
+        index = self.sourceModel().index(source_row, 0, source_parent)
+        music_id = self.sourceModel().data(index, RoleConstants.store_music_id_role)
+        return music_id in self.music_ids if music_id is not None else False

@@ -9,17 +9,18 @@ from PySide6.QtGui import QStandardItemModel, QStandardItem, Qt
 from PySide6.QtWidgets import QWidget, QLineEdit, QListWidget, QListWidgetItem, QHBoxLayout, QLabel, QTableView, \
     QHeaderView, QSizePolicy, QAbstractItemView
 
+from constants.role_constants import RoleConstants
 from utils.audio_metadata_utils import AudioMetaDataUtils
 from utils.database_utils import DataBaseUtils
 
-store_full_path_role = Qt.ItemDataRole.UserRole
-store_music_list_role = Qt.ItemDataRole.UserRole + 1
 
 class PlayListView(QWidget):
-    play_selected= Signal(str,int)
-    def __init__(self,parent=None):
+    play_selected = Signal(str, list)
+
+    def __init__(self, parent=None):
         super().__init__(parent)
-        self.proxy_data_model:QSortFilterProxyModel=None
+        self.proxy_data_model: QSortFilterProxyModel = None
+        self.curr_music_list = []
         self._ui_init()
         self._init_table()
         self._connect_signal_and_slot()
@@ -47,7 +48,7 @@ class PlayListView(QWidget):
         self.table_view.doubleClicked.connect(self.on_double_clicked)
 
     @Slot()
-    def on_double_clicked(self,proxy_index:QModelIndex):
+    def on_double_clicked(self, proxy_index: QModelIndex):
         # 拿到源对象和源对象中对应的索引
         source_index = self.proxy_data_model.mapToSource(proxy_index)
         source_model = self.proxy_data_model.sourceModel()
@@ -56,11 +57,25 @@ class PlayListView(QWidget):
         title = source_index.siblingAtColumn(0)
         item = source_model.itemFromIndex(title)
 
-        path = item.data(store_full_path_role) # 根据role拿到保存的数据
-        music_list = item.data(store_music_list_role) # 根据role拿到保存的数据
-        self.play_selected.emit(path,music_list)
+        path = item.data(RoleConstants.store_full_path_role)  # 根据role拿到保存的数据
+
+        self.play_selected.emit(path, self.curr_music_list)
 
     @Slot()
-    def change_data_model(self,model:QSortFilterProxyModel):
+    def change_data_model(self, model: QSortFilterProxyModel):
         self.proxy_data_model = model
         self.table_view.setModel(self.proxy_data_model)
+
+        self.curr_music_list.clear()
+
+        # 2. 遍历当前过滤后的模型
+        for row in range(model.rowCount()):
+            # 获取第 0 列（Title列）的索引
+            index = model.index(row, 0)
+
+            # 通过 UserRole 获取存储的路径
+            # 注意：这里假设你存路径的 role 变量名为 store_full_path_role
+            file_path = model.data(index, RoleConstants.store_full_path_role)
+
+            if file_path:
+                self.curr_music_list.append(file_path)
