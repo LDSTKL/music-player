@@ -36,11 +36,12 @@ class DataManager(QWidget):
         self.scaner = MusicScanner(scan_path)
         self.scaner.add_item.connect(self.add_item)
         self.scaner.finished.connect(lambda: self.inited_with_settings.emit(self.total_music))
+        self.scaner.finished.connect(self.init_custom_model)
         self.scaner.start()
 
     @Slot()
     def add_item(self, metadata: dict):
-        '''向ItemModel中添加数据'''
+        '''其他线程向ItemModel中添加数据'''
         # 创建三个可见列的 Item
         item_title = QStandardItem(metadata['title'])
         item_artist = QStandardItem(metadata['artist'])
@@ -58,8 +59,36 @@ class DataManager(QWidget):
         self.total_data_model.appendRow([item_title, item_artist, item_album])
 
     @Slot()
-    def change_model(self,index:QModelIndex):
-        self.change_selected_model.emit(self.model_list[index.row()])
+    def change_model(self,index:int):
+        self.change_selected_model.emit(self.model_list[index])
+
+    @Slot()
+    def init_custom_model(self):
+        conn = DataBaseUtils.get_new_connection()
+        playlists :list[tuple] = DataBaseUtils.get_all_playlists(conn)
+        if len(playlists) > 0:
+            for playlist in playlists:
+                self.create_new_model(playlist[0])
+                self.update_playlist_songs(len(self.model_list)-1)
+
+
+
+    @Slot()
+    def create_new_model(self,playlist_id:int):
+        playlist_model = PlaylistFilterProxyModel(playlist_id)
+        playlist_model.setSourceModel(self.total_data_model)
+        self.model_list.append(playlist_model)
+
+    @Slot()
+    def update_playlist_songs(self, playlist_index: int):
+        """更新指定歌单包含的歌曲"""
+        if 2 <= playlist_index < len(self.model_list):  # 索引2开始是自定义歌单
+            proxy_model = self.model_list[playlist_index]
+            if isinstance(proxy_model, PlaylistFilterProxyModel):
+                self.scaner = PlaylistScanner(proxy_model.playlist_id)
+                self.scaner.songs_loaded.connect(proxy_model.update_music_ids)
+                self.scaner.start()
+
 
 
 '''
@@ -109,6 +138,19 @@ class MusicScanner(QThread):
         finally:
             conn.close()
 
+class PlaylistScanner(QThread):
+    songs_loaded = Signal(set)
+    def __init__(self,playlist_id):
+        super().__init__()
+        self.playlist_id=playlist_id
+
+    def run(self, /) -> None:
+        conn = DataBaseUtils.get_new_connection()
+        try:
+            music_ids = DataBaseUtils.get_playlist_music_ids(conn, self.playlist_id)
+            self.songs_loaded.emit(music_ids)
+        finally:
+            conn.close()
 
 class FavoriteFilterProxyModel(QSortFilterProxyModel):
     def __init__(self, parent=None):
@@ -123,9 +165,15 @@ class FavoriteFilterProxyModel(QSortFilterProxyModel):
         return is_favorite == 1
 
 class PlaylistFilterProxyModel(QSortFilterProxyModel):
-    def __init__(self, music_ids: set, parent=None):
+    def __init__(self,playlist_id:int, parent=None):
         super().__init__(parent)
+        self.playlist_id = playlist_id
+        self.music_ids = set()
+
+    def update_music_ids(self, music_ids: set):
+        """动态更新歌单包含的歌曲ID"""
         self.music_ids = music_ids
+        self.invalidateFilter()
 
     def filterAcceptsRow(self, source_row, source_parent):
         index = self.sourceModel().index(source_row, 0, source_parent)

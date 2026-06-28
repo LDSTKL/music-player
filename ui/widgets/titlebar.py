@@ -1,6 +1,6 @@
 import PySide6
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QLabel, QSizePolicy
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QLabel
 
 
 class TitleBar(QWidget):

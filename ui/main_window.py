@@ -1,8 +1,6 @@
-import PySide6
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout, QWidget, QLabel
 
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QWidget, QLabel
 from ui.widgets.data_manager import DataManager
 from ui.widgets.play_lists import PlayLists
 from ui.widgets.player_controls import PlayerControls
@@ -62,7 +60,7 @@ class MainWindow(QWidget):
         self.play_lists= PlayLists()
         self.left_part_layout.addWidget(self.play_lists)
 
-        self.up_part_layout.addLayout(self.left_part_layout)
+        self.up_part_layout.addLayout(self.left_part_layout,stretch=1)
 
     def right_part_init(self):
         self.right_part_layout = QVBoxLayout()
@@ -70,7 +68,7 @@ class MainWindow(QWidget):
         self.right_part_layout.addWidget(self.right_title_bar)
         self.playlist_view = PlayListView()
         self.right_part_layout.addWidget(self.playlist_view)
-        self.up_part_layout.addLayout(self.right_part_layout)
+        self.up_part_layout.addLayout(self.right_part_layout,stretch=3)
 
 
     def _song_info_panel_and_playercontrols_init(self):
@@ -89,12 +87,15 @@ class MainWindow(QWidget):
     def _connect_signal_and_slot(self):
         # 切换音频时动态获取音频信息
         self.player_controls.metadata_changed.connect(self.song_info_panel.on_metadata_changed)
-        #
+        # 设置加载完成后通知data_manager
         self.settings_inited.connect(self.data_manager.init_with_settings)
-        #
+        self.settings_inited.connect(self.play_lists.init_with_settings)
+        # playlist_view中展示的歌曲双击播放
         self.playlist_view.play_selected.connect(self.player_controls.play_selected_music)
-
+        # 切换playlist_view展示的模型
         self.data_manager.inited_with_settings.connect(self.playlist_view.change_data_model)
         self.data_manager.change_selected_model.connect(self.playlist_view.change_data_model)
-
+        # 切换播放列表
         self.play_lists.change_playlist.connect(self.data_manager.change_model)
+        # 创建播放列表
+        self.play_lists.create_playlist.connect(self.data_manager.create_new_model)

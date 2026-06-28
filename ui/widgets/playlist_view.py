@@ -1,17 +1,13 @@
 '''
 播放列表
 '''
-import os
-from threading import Thread
 
-from PySide6.QtCore import Slot, QThread, Signal, QModelIndex, QSortFilterProxyModel
-from PySide6.QtGui import QStandardItemModel, QStandardItem, Qt
-from PySide6.QtWidgets import QWidget, QLineEdit, QListWidget, QListWidgetItem, QHBoxLayout, QLabel, QTableView, \
-    QHeaderView, QSizePolicy, QAbstractItemView
+
+from PySide6.QtCore import Slot, Signal, QModelIndex, QSortFilterProxyModel
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QTableView, \
+    QHeaderView, QAbstractItemView
 
 from constants.role_constants import RoleConstants
-from utils.audio_metadata_utils import AudioMetaDataUtils
-from utils.database_utils import DataBaseUtils
 
 
 class PlayListView(QWidget):

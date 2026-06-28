@@ -2,16 +2,12 @@
 播放控制栏
 '''
 import sys
-
 import PySide6.QtGui
-from PySide6.QtCore import QUrl, Slot, Qt, QPoint, Signal, QSortFilterProxyModel
+from PySide6.QtCore import QUrl, Slot, Qt, Signal
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtWidgets import QWidget, QApplication, QPushButton, QVBoxLayout, QHBoxLayout, QSlider, QStyle, \
     QStyleOptionSlider
 
-from constants.role_constants import RoleConstants
-from ui.widgets.song_info_panel import SongInfoPanel
-from utils.database_utils import DataBaseUtils
 
 
 class EnhancedSlider(QSlider):

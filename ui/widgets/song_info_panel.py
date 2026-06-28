@@ -1,7 +1,7 @@
 '''
 歌曲信息面板
 '''
-from PySide6.QtCore import Slot, Signal
+from PySide6.QtCore import Slot
 from PySide6.QtGui import QPixmap
 from PySide6.QtMultimedia import QMediaPlayer, QMediaMetaData
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QVBoxLayout, QSizePolicy
