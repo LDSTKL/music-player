@@ -4,17 +4,20 @@ from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QLabel
 
 
 class TitleBar(QWidget):
-    def __init__(self,parent):
+    def __init__(self,parent,is_left:bool):
         super().__init__(parent)
         self.parent = parent
         self.mouse_pressed = False  # 用于实现窗口拖拽
+        self.is_left = is_left
         self._ui_init()
 
     def _ui_init(self):
         '''初始化UI'''
         self.main_layout = QHBoxLayout(self) # 主要布局,水平布局
-        self._title_init()
-        self._button_init()
+        if self.is_left:
+            self._title_init()
+        else:
+            self._button_init()
 
     def _title_init(self):
         self.label = QLabel('hello world')

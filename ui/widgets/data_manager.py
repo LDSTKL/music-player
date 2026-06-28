@@ -16,6 +16,7 @@ class DataManager(QWidget):
     change_selected_model = Signal(QSortFilterProxyModel)
     def __init__(self):
         super().__init__()
+        self.scaners:list[QThread]=[]
         self.model_list = []
         self.total_data_model = QStandardItemModel()
         # 设置表头标签
@@ -29,15 +30,25 @@ class DataManager(QWidget):
 
 
     @Slot()
-    def init_with_settings(self, settings):
+    def init_with_settings(self, scan_path:str):
         '''根据设置的扫描目录进行异步歌曲扫描'''
-        line_edit: QLineEdit = settings.setting_scan_dir_lineedit
-        scan_path = line_edit.text()
-        self.scaner = MusicScanner(scan_path)
-        self.scaner.add_item.connect(self.add_item)
-        self.scaner.finished.connect(lambda: self.inited_with_settings.emit(self.total_music))
-        self.scaner.finished.connect(self.init_custom_model)
-        self.scaner.start()
+        self.total_data_model.clear()
+        scaner = MusicScanner(scan_path)
+        scaner.add_item.connect(self.add_item)
+        scaner.finished.connect(lambda: self.inited_with_settings.emit(self.total_music))
+        scaner.finished.connect(self.init_custom_model)
+        scaner.finished.connect(scaner.deleteLater)
+        self.scaners.append(scaner)
+        scaner.start()
+
+    @Slot()
+    def init_with_changed_settings(self,scan_path:str):
+        conn = DataBaseUtils.get_new_connection()
+        try:
+            DataBaseUtils.clear_all_data(conn)
+        finally:
+            conn.close()
+        self.init_with_settings(scan_path)
 
     @Slot()
     def add_item(self, metadata: dict):
@@ -85,9 +96,55 @@ class DataManager(QWidget):
         if 2 <= playlist_index < len(self.model_list):  # 索引2开始是自定义歌单
             proxy_model = self.model_list[playlist_index]
             if isinstance(proxy_model, PlaylistFilterProxyModel):
-                self.scaner = PlaylistScanner(proxy_model.playlist_id)
-                self.scaner.songs_loaded.connect(proxy_model.update_music_ids)
-                self.scaner.start()
+                scaner = PlaylistScanner(proxy_model.playlist_id)
+                scaner.songs_loaded.connect(proxy_model.update_music_ids)
+                scaner.finished.connect(scaner.deleteLater)
+                self.scaners.append(scaner)
+                scaner.start()
+
+    @Slot()
+    def add_to_a_playlist(self,music_id:int,model_index:int):
+        conn = DataBaseUtils.get_new_connection()
+        try:
+            if model_index == 1:
+                # 更新数据库中 is_favorite 的状态
+                DataBaseUtils.toggle_favorite(conn,music_id,1)
+                for row in range(self.total_data_model.rowCount()):
+                    item = self.total_data_model.item(row, 0)
+                    # 遍历找到设为is_favorite的音乐所在的item
+                    if item and item.data(RoleConstants.store_music_id_role) == music_id:
+                        item.setData(1, RoleConstants.store_is_favorite_role)
+                        break
+
+                    # 3. 刷新收藏过滤模型
+                self.favor_music.invalidateFilter()
+
+            elif 2 <= model_index < len(self.model_list):  # 索引2开始是自定义歌单
+                proxy_model: PlaylistFilterProxyModel = self.model_list[model_index]
+                DataBaseUtils.add_to_playlist(conn, proxy_model.playlist_id, music_id)
+                proxy_model.update_music_ids([*proxy_model.music_ids,music_id])
+        finally:
+            conn.close()
+
+    @Slot()
+    def remove_from_a_playlist(self,music_id,playlist_id):
+        conn = DataBaseUtils.get_new_connection()
+        try:
+            if playlist_id == 0:
+                DataBaseUtils.toggle_favorite(conn,music_id,0)
+                for row in range(self.total_data_model.rowCount()):
+                    item =self.total_data_model.item(row,0)
+                    if item.data(RoleConstants.store_music_id_role) ==music_id:
+                        item.setData(0,RoleConstants.store_is_favorite_role)
+                self.model_list[1].invalidateFilter()
+            else:
+                DataBaseUtils.remove_from_playlist(conn,playlist_id,music_id)
+                for model in self.model_list[2:]:
+                    if model.playlist_id == playlist_id:
+                        model.music_ids.remove(music_id)
+                        model.update_music_ids(model.music_ids)
+        finally:
+            conn.close()
 
 
 
@@ -127,14 +184,19 @@ class MusicScanner(QThread):
                     if file.endswith('.mp3'):
                         full_path = os.path.join(self.scan_path, file)
                         metadata = AudioMetaDataUtils.get_music_meta(full_path)
-                        # 添加数据到data_model
-                        self.add_item.emit(metadata, full_path)
                         # 更新数据库
-                        DataBaseUtils.insert_or_update_music(conn, full_path, metadata['title']
-                                                             , metadata['artist']
-                                                             , metadata['album']
-                                                             , metadata['genre']
-                                                             , metadata['year'])
+                        music_id = DataBaseUtils.insert_or_update_music(conn, full_path, metadata['title']
+                                                                        , metadata['artist']
+                                                                        , metadata['album']
+                                                                        , metadata['genre']
+                                                                        , metadata['year'])
+                        # 添加数据到data_model
+                        metadata={**metadata,
+                                  'id':music_id,
+                                  'full_path':full_path,
+                                  'is_favorite':0
+                                  }
+                        self.add_item.emit(metadata)
         finally:
             conn.close()
 

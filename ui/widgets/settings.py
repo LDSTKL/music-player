@@ -31,13 +31,15 @@ class Settings(QWidget):
 
     @Slot()
     def update_scan_dir(self):
-        self.setting_scan_dir_lineedit.setText(
-            QFileDialog.getExistingDirectory(self, "Open Directory",
+        path = QFileDialog.getExistingDirectory(self, "Open Directory",
                                              "/home",
                                              QFileDialog.ShowDirsOnly
-                                             | QFileDialog.DontResolveSymlinks))
-
-        self.scan_dir_changed.emit(self.setting_scan_dir_lineedit.text())
+                                             | QFileDialog.DontResolveSymlinks)
+        if path ==None or path=='':
+            return
+        else:
+            self.setting_scan_dir_lineedit.setText(path)
+            self.scan_dir_changed.emit(self.setting_scan_dir_lineedit.text())
 
 
 

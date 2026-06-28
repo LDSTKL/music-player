@@ -12,7 +12,7 @@ from utils.database_utils import DataBaseUtils
 
 
 class MainWindow(QWidget):
-    settings_inited = Signal(Settings)
+    settings_inited = Signal(str)
 
     def __init__(self):
         super().__init__()
@@ -36,35 +36,39 @@ class MainWindow(QWidget):
         '''初始化UI'''
         self.main_layout = QVBoxLayout(self)  # 主要布局,垂直布局
         self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self._settings_init()
         self.up_part_init()
         self.left_part_init()
         self.right_part_init()
 
         self._song_info_panel_and_playercontrols_init()
 
-        self._settings_init()
+
         self._connect_signal_and_slot()
 
         # 发送设置以完成信号
-        self.settings_inited.emit(self.settings)
+        self.settings_inited.emit(self.settings.setting_scan_dir_lineedit.text())
     def up_part_init(self):
+        '''左上角+右上角UI初始化'''
         self.up_part_layout = QHBoxLayout()
         self.up_part_layout.setSpacing(0)
 
         self.main_layout.addLayout(self.up_part_layout)
 
     def left_part_init(self):
+        '''左上角部分UI初始化'''
         self.left_part_layout = QVBoxLayout()
-        self.left_title_bar = TitleBar(self)
+        self.left_title_bar = TitleBar(self,True)
         self.left_part_layout.addWidget(self.left_title_bar)
-        self.play_lists= PlayLists()
+        self.play_lists= PlayLists(self.settings)
         self.left_part_layout.addWidget(self.play_lists)
 
         self.up_part_layout.addLayout(self.left_part_layout,stretch=1)
 
     def right_part_init(self):
+        '''右上角部分UI初始化'''
         self.right_part_layout = QVBoxLayout()
-        self.right_title_bar = TitleBar(self)
+        self.right_title_bar = TitleBar(self,False)
         self.right_part_layout.addWidget(self.right_title_bar)
         self.playlist_view = PlayListView()
         self.right_part_layout.addWidget(self.playlist_view)
@@ -98,4 +102,13 @@ class MainWindow(QWidget):
         # 切换播放列表
         self.play_lists.change_playlist.connect(self.data_manager.change_model)
         # 创建播放列表
-        self.play_lists.create_playlist.connect(self.data_manager.create_new_model)
+        self.play_lists.create_playlist_finished.connect(self.data_manager.create_new_model)
+        self.play_lists.create_playlist_finished.connect(self.playlist_view.init_add_to_playlist_actions)
+
+        # 添加歌曲到指定播放列表
+        self.playlist_view.add_to_playlist.connect(self.data_manager.add_to_a_playlist)
+        # 从播放列表中移除歌曲
+        self.playlist_view.remove_from_playlist.connect(self.data_manager.remove_from_a_playlist)
+
+        self.settings.scan_dir_changed.connect(self.data_manager.init_with_changed_settings)
+        self.settings.scan_dir_changed.connect(self.play_lists.init_with_changed_settings)

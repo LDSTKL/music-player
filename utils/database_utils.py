@@ -71,29 +71,38 @@ class DataBaseUtils:
         finally:
             conn.close()
 
-
     @classmethod
-    def insert_or_update_music(cls, conn:sqlite3.Connection, file_path: str, title: str = None, artist: str = None,
-                     album: str = None, genre: str = None, year: int = None, is_favorite: int = 0):
-        """插入或更新单首音乐信息"""
+    def insert_or_update_music(cls, conn: sqlite3.Connection, file_path: str, title: str = None, artist: str = None,
+                               album: str = None, genre: str = None, year: int = None, is_favorite: int = 0) -> int:
+        """插入或更新单首音乐信息，返回音乐ID"""
 
         cursor = conn.cursor()
         try:
-            cursor.execute("""
-                  INSERT INTO music_library (file_path, title, artist, album, genre, year, is_favorite)
-                  VALUES (?, ?, ?, ?, ?, ?, ?)
-                  ON CONFLICT(file_path) DO UPDATE SET
-                      title = excluded.title,
-                      artist = excluded.artist,
-                      album = excluded.album,
-                      genre = excluded.genre,
-                      year = excluded.year,
-                      is_favorite = excluded.is_favorite
-              """, (file_path, title, artist, album, genre, year))
-            # 如果file_path冲突，说明不是新插入的数据，而是更新原来的数据
+            # 先查询是否已存在
+            cursor.execute("SELECT id FROM music_library WHERE file_path = ?", (file_path,))
+            row = cursor.fetchone()
+
+            if row:
+                # 更新现有记录
+                music_id = row[0]
+                cursor.execute("""
+                        UPDATE music_library 
+                        SET title = ?, artist = ?, album = ?, genre = ?, year = ?, is_favorite = ?
+                        WHERE file_path = ?
+                    """, (title, artist, album, genre, year, is_favorite, file_path))
+            else:
+                # 插入新记录
+                cursor.execute("""
+                        INSERT INTO music_library (file_path, title, artist, album, genre, year, is_favorite)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """, (file_path, title, artist, album, genre, year, is_favorite))
+                music_id = cursor.lastrowid
+
             conn.commit()
+            return music_id
         except sqlite3.Error as e:
             print(f"Database error: {e}")
+            return -1
 
     @classmethod
     def select_all_music(cls, conn:sqlite3.Connection)->list[tuple]:
@@ -152,6 +161,76 @@ class DataBaseUtils:
         cursor = conn.cursor()
         cursor.execute("SELECT music_id FROM playlist_items WHERE playlist_id = ?", (playlist_id,))
         return {row[0] for row in cursor.fetchall()}
+
+    @classmethod
+    def toggle_favorite(cls, conn: sqlite3.Connection, id: int, is_favorite: int):
+        """设置歌曲的喜欢状态,0表示从喜欢列表移除,1表示设置为喜欢"""
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                    UPDATE music_library 
+                    SET is_favorite = ? 
+                    WHERE id = ?
+                """, (is_favorite, id))
+            conn.commit()
+        except sqlite3.Error as e:
+            print(f"更新喜欢状态失败: {e}")
+
+    @classmethod
+    def remove_from_playlist(cls, conn: sqlite3.Connection, playlist_id: int, music_id: int):
+        """从播放列表中移除指定歌曲"""
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                   DELETE FROM playlist_items 
+                   WHERE playlist_id = ? AND music_id = ?
+               """, (playlist_id, music_id))
+
+            # 重新排序剩余歌曲的 position
+            cursor.execute("""
+                   UPDATE playlist_items 
+                   SET position = position - 1 
+                   WHERE playlist_id = ? AND position > (
+                       SELECT position FROM playlist_items 
+                       WHERE playlist_id = ? AND music_id = ?
+                   )
+               """, (playlist_id, playlist_id, music_id))
+
+            conn.commit()
+        except sqlite3.Error as e:
+            print(f"从播放列表移除歌曲失败: {e}")
+
+    @classmethod
+    def delete_playlist(cls, conn: sqlite3.Connection, playlist_id: int):
+        """删除播放列表及其所有歌曲项"""
+        cursor = conn.cursor()
+        try:
+            # 先删除播放列表中的所有歌曲项
+            cursor.execute("DELETE FROM playlist_items WHERE playlist_id = ?", (playlist_id,))
+            # 再删除播放列表本身
+            cursor.execute("DELETE FROM playlists WHERE id = ?", (playlist_id,))
+            conn.commit()
+        except sqlite3.Error as e:
+            print(f"删除播放列表失败: {e}")
+
+    @classmethod
+    def clear_all_data(cls, conn: sqlite3.Connection):
+        """清除所有表中的数据，但保留表结构"""
+        cursor = conn.cursor()
+        try:
+            # 按外键依赖顺序删除数据
+            cursor.execute("DELETE FROM playlist_items")
+            cursor.execute("DELETE FROM playlists")
+            cursor.execute("DELETE FROM music_library")
+
+            # 重置自增ID计数器
+            cursor.execute("DELETE FROM sqlite_sequence WHERE name='music_library'")
+            cursor.execute("DELETE FROM sqlite_sequence WHERE name='playlists'")
+            cursor.execute("DELETE FROM sqlite_sequence WHERE name='playlist_items'")
+
+            conn.commit()
+        except sqlite3.Error as e:
+            print(f"清除数据失败: {e}")
 
 
 

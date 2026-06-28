@@ -3,14 +3,16 @@ from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QSizePolicy, QSpacerItem, QListWidget, \
     QInputDialog
 
+from ui.widgets.settings import Settings
 from utils.database_utils import DataBaseUtils
 
 
 class PlayLists(QWidget):
     change_playlist = Signal(int)
-    create_playlist = Signal(int)
-    def __init__(self,parent =None):
+    create_playlist_finished = Signal(int)
+    def __init__(self,settings:Settings,parent =None):
         super().__init__(parent)
+        self.settings_widget = settings
         self._ui_init()
         self._connect_signals_and_slots()
 
@@ -21,8 +23,12 @@ class PlayLists(QWidget):
         self._add_playlist_button_init()
         self._custom_list_init()
         self._buttom_spacer_init()
+        self._settings_button_init()
 
-
+    @Slot()
+    def init_with_changed_settings(self):
+        self.custom_play_lists.clear()
+        self._update_list_height()
 
     def _default_list_init(self):
         '''默认列表'''
@@ -51,6 +57,10 @@ class PlayLists(QWidget):
         self.spacer = QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
         self.main_layout.addSpacerItem(self.spacer)
 
+    def _settings_button_init(self):
+        self.settings_button=QPushButton('设置')
+        self.main_layout.addWidget(self.settings_button)
+
 
     def _connect_signals_and_slots(self):
         #按钮点击
@@ -60,6 +70,8 @@ class PlayLists(QWidget):
         self.custom_play_lists.clicked.connect(lambda index:self.change_playlist.emit(index.row()+2))
         #添加歌单按钮点击
         self.add_playlist_button.clicked.connect(self.add_new_playlist)
+        #设置按钮点击
+        self.settings_button.clicked.connect(self.settings_widget.show)
 
     @Slot()
     def add_new_playlist(self):
@@ -68,7 +80,7 @@ class PlayLists(QWidget):
             try:
                 conn = DataBaseUtils.get_new_connection()
                 playlist_id = DataBaseUtils.create_playlist(conn,text)
-                self.create_playlist.emit(playlist_id)
+                self.create_playlist_finished.emit(playlist_id)
                 self.custom_play_lists.addItem(text)
                 self._update_list_height()
             finally:
