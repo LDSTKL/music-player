@@ -93,7 +93,6 @@ class MainWindow(QWidget):
         self.player_controls.metadata_changed.connect(self.song_info_panel.on_metadata_changed)
         # 设置加载完成后通知data_manager
         self.settings_inited.connect(self.data_manager.init_with_settings)
-        self.settings_inited.connect(self.play_lists.init_with_settings)
         # playlist_view中展示的歌曲双击播放
         self.playlist_view.play_selected.connect(self.player_controls.play_selected_music)
         # 切换playlist_view展示的模型
@@ -102,7 +101,7 @@ class MainWindow(QWidget):
         # 切换播放列表
         self.play_lists.change_playlist.connect(self.data_manager.change_model)
         # 创建播放列表
-        self.play_lists.create_playlist_finished.connect(self.data_manager.create_new_model)
+        self.play_lists.create_playlist_finished.connect(self.data_manager.create_new_custom_model)
         self.play_lists.create_playlist_finished.connect(self.playlist_view.init_add_to_playlist_actions)
 
         # 添加歌曲到指定播放列表

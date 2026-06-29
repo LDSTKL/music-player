@@ -19,7 +19,7 @@ class Settings(QWidget):
         self.setting_scan_dir_layout = QHBoxLayout()
         self.setting_scan_dir_label = QLabel('扫描目录')
         self.setting_scan_dir_lineedit = QLineEdit(readOnly=True,text=r'D:\音乐')
-        self.setting_scan_dir_button = QPushButton('scan')
+        self.setting_scan_dir_button = QPushButton('切换目录')
         self.setting_scan_dir_button.clicked.connect(self.update_scan_dir)
 
         self.setting_scan_dir_layout.addWidget(self.setting_scan_dir_label)

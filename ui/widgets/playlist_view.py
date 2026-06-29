@@ -69,6 +69,7 @@ class PlayListView(QWidget):
 
     @Slot()
     def on_double_clicked(self, proxy_index: QModelIndex):
+        '''双击播放音乐'''
         # 拿到源对象和源对象中对应的索引
         source_index = self.proxy_data_model.mapToSource(proxy_index)
         source_model:QStandardItemModel = self.proxy_data_model.sourceModel()

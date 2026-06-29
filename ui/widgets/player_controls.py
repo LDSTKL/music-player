@@ -55,7 +55,7 @@ class PlayerControls(QWidget):
     def __init__(self,parent=None):
         super().__init__(parent)
         self.music_list = []
-        self.cur_music_index = 0
+        self.curr_music_index = 0
         self._ui_init()
         self._player_init()
         self._connect_slot()
@@ -74,13 +74,9 @@ class PlayerControls(QWidget):
         self.controls_layout = QHBoxLayout() # 布局
         self.pause_button = QPushButton('||')
         self.pause_button.hide()
-        self.pause_button.clicked.connect(self.pause)
         self.play_button = QPushButton('>')
-        self.play_button.clicked.connect(self.play)
         self.next_media_button = QPushButton('>>')
-        self.next_media_button.clicked.connect(self.play_next)
         self.prev_media_button = QPushButton('<<')
-        self.prev_media_button.clicked.connect(self.play_prev)
         self.volume_button = QPushButton('🔉')
         self.play_mode_button = QPushButton('o')
 
@@ -113,6 +109,11 @@ class PlayerControls(QWidget):
 
 
     def _connect_slot(self):
+        # 绑定按钮功能
+        self.pause_button.clicked.connect(self.pause)
+        self.play_button.clicked.connect(self.play)
+        self.next_media_button.clicked.connect(self.play_next)
+        self.prev_media_button.clicked.connect(self.play_prev)
         # 绑定媒体播放器和音乐进度条
         self.player.durationChanged.connect(lambda d: self.slider.setRange(0, d))
         self.player.positionChanged.connect(self.update_slider_when_position_changed)
@@ -130,55 +131,56 @@ class PlayerControls(QWidget):
         执行update_slider(修改slider成功)—>执行update_player
         即用户修改丢失
         '''
-        self.player.mediaStatusChanged.connect(self.media_status_changed)
+        self.player.mediaStatusChanged.connect(self.media_status_changed) # 音乐播放结束后续操作
         self.player.metaDataChanged.connect(lambda :self.metadata_changed.emit(self.player))
 
 
     @Slot()
     def pause(self):
+        '''暂停'''
         self.player.pause()
         self.play_button.show()
         self.pause_button.hide()
 
     @Slot()
     def play(self):
+        '''播放'''
         self.player.play()
         self.pause_button.show()
         self.play_button.hide()
 
     @Slot()
     def play_next(self):
-        self.curr_music_index += 1
+        '''下一首'''
+        self.curr_music_index = (self.curr_music_index+1)% len(self.music_list)
         self.player.setSource(QUrl.fromLocalFile(self.music_list[self.curr_music_index]) )
-        self.player.play()
-        self.pause_button.show()
-        self.play_button.hide()
+        self.play()
 
     @Slot()
     def play_prev(self):
-        self.curr_music_index-=1
+        '''上一首'''
+        self.curr_music_index = (self.curr_music_index-1)% len(self.music_list)
         self.player.setSource(QUrl.fromLocalFile(self.music_list[self.curr_music_index]))
-        self.player.play()
-        self.pause_button.show()
-        self.play_button.hide()
+        self.play()
 
     @Slot()
     def update_slider_when_position_changed(self,p):
-        '''如果用户在拖动滑块,就不随着媒体播放更新滑块,避免滑块乱跳'''
+        '''音乐播放时，滑块移动，实现进度条效果'''
+        # 如果用户在拖动滑块,就不随着媒体播放更新滑块,避免滑块乱跳
         if not self.slider.isSliderDown():
             self.slider.setValue(p)
 
     @Slot()
     def update_player_when_slider_released(self):
-        '''滑动滑块调整音乐播放进度'''
+        '''用户释放滑块后调整音乐播放进度'''
         self.player.setPosition(self.slider.value())
+
 
     @Slot()
     def media_status_changed(self,status:QMediaPlayer.MediaStatus):
         '''处理播放结束后后续操作,与播放方式有关'''
         if status==QMediaPlayer.MediaStatus.EndOfMedia:
             self.pause()
-
 
 
     @Slot()

@@ -31,10 +31,9 @@ class DataManager(QWidget):
 
     @Slot()
     def init_with_settings(self, scan_path:str):
-        '''根据设置的扫描目录进行异步歌曲扫描'''
-        self.total_data_model.clear()
+        '''根据设置的扫描目录进行异步歌曲扫描,并把扫描到各歌曲信息添加到total_data_model'''
         scaner = MusicScanner(scan_path)
-        scaner.add_item.connect(self.add_item)
+        scaner.add_item.connect(self.add_item_to_total_data_model)
         scaner.finished.connect(lambda: self.inited_with_settings.emit(self.total_music))
         scaner.finished.connect(self.init_custom_model)
         scaner.finished.connect(scaner.deleteLater)
@@ -42,16 +41,48 @@ class DataManager(QWidget):
         scaner.start()
 
     @Slot()
+    def init_custom_model(self):
+        '''total_data_model的数据初始化完成后,初始化以它为source的代理模型'''
+        conn = DataBaseUtils.get_new_connection()
+        playlists: list[tuple] = DataBaseUtils.get_all_playlists(conn)
+        if len(playlists) > 0:
+            for playlist in playlists:
+                self.create_new_custom_model(playlist[0])
+                self.init_custom_model_data(len(self.model_list) - 1)
+
+    @Slot()
+    def create_new_custom_model(self, playlist_id: int):
+        '''创建自定义歌单数据模型'''
+        playlist_model = PlaylistFilterProxyModel(playlist_id)
+        playlist_model.setSourceModel(self.total_data_model)
+        self.model_list.append(playlist_model)
+
+    @Slot()
+    def init_custom_model_data(self, playlist_index: int):
+        """从数据库中初始化自定义歌单包含的歌曲"""
+        if 2 <= playlist_index < len(self.model_list):  # 索引2开始是自定义歌单
+            proxy_model = self.model_list[playlist_index]
+            if isinstance(proxy_model, PlaylistFilterProxyModel):
+                scaner = PlaylistScanner(proxy_model.playlist_id)
+                scaner.songs_loaded.connect(proxy_model.update_music_ids)
+                scaner.finished.connect(scaner.deleteLater)
+                self.scaners.append(scaner)
+                scaner.start()
+
+    @Slot()
     def init_with_changed_settings(self,scan_path:str):
         conn = DataBaseUtils.get_new_connection()
         try:
             DataBaseUtils.clear_all_data(conn)
+            self.total_data_model.clear()
+            self.init_with_settings(scan_path)
         finally:
             conn.close()
-        self.init_with_settings(scan_path)
+
+
 
     @Slot()
-    def add_item(self, metadata: dict):
+    def add_item_to_total_data_model(self, metadata: dict):
         '''其他线程向ItemModel中添加数据'''
         # 创建三个可见列的 Item
         item_title = QStandardItem(metadata['title'])
@@ -71,36 +102,9 @@ class DataManager(QWidget):
 
     @Slot()
     def change_model(self,index:int):
+        '''play_lists中用户切换歌单时'''
         self.change_selected_model.emit(self.model_list[index])
 
-    @Slot()
-    def init_custom_model(self):
-        conn = DataBaseUtils.get_new_connection()
-        playlists :list[tuple] = DataBaseUtils.get_all_playlists(conn)
-        if len(playlists) > 0:
-            for playlist in playlists:
-                self.create_new_model(playlist[0])
-                self.update_playlist_songs(len(self.model_list)-1)
-
-
-
-    @Slot()
-    def create_new_model(self,playlist_id:int):
-        playlist_model = PlaylistFilterProxyModel(playlist_id)
-        playlist_model.setSourceModel(self.total_data_model)
-        self.model_list.append(playlist_model)
-
-    @Slot()
-    def update_playlist_songs(self, playlist_index: int):
-        """更新指定歌单包含的歌曲"""
-        if 2 <= playlist_index < len(self.model_list):  # 索引2开始是自定义歌单
-            proxy_model = self.model_list[playlist_index]
-            if isinstance(proxy_model, PlaylistFilterProxyModel):
-                scaner = PlaylistScanner(proxy_model.playlist_id)
-                scaner.songs_loaded.connect(proxy_model.update_music_ids)
-                scaner.finished.connect(scaner.deleteLater)
-                self.scaners.append(scaner)
-                scaner.start()
 
     @Slot()
     def add_to_a_playlist(self,music_id:int,model_index:int):
@@ -122,6 +126,7 @@ class DataManager(QWidget):
             elif 2 <= model_index < len(self.model_list):  # 索引2开始是自定义歌单
                 proxy_model: PlaylistFilterProxyModel = self.model_list[model_index]
                 DataBaseUtils.add_to_playlist(conn, proxy_model.playlist_id, music_id)
+                # 刷新过滤模型
                 proxy_model.update_music_ids([*proxy_model.music_ids,music_id])
         finally:
             conn.close()
@@ -136,13 +141,16 @@ class DataManager(QWidget):
                     item =self.total_data_model.item(row,0)
                     if item.data(RoleConstants.store_music_id_role) ==music_id:
                         item.setData(0,RoleConstants.store_is_favorite_role)
+                # 刷新模型中的数据
                 self.model_list[1].invalidateFilter()
             else:
                 DataBaseUtils.remove_from_playlist(conn,playlist_id,music_id)
                 for model in self.model_list[2:]:
                     if model.playlist_id == playlist_id:
                         model.music_ids.remove(music_id)
+                        # 刷新模型中的数据
                         model.update_music_ids(model.music_ids)
+                        break
         finally:
             conn.close()
 
@@ -201,7 +209,7 @@ class MusicScanner(QThread):
             conn.close()
 
 class PlaylistScanner(QThread):
-    songs_loaded = Signal(set)
+    songs_loaded = Signal(set) # 该歌单中歌曲id的集合
     def __init__(self,playlist_id):
         super().__init__()
         self.playlist_id=playlist_id
@@ -215,6 +223,7 @@ class PlaylistScanner(QThread):
             conn.close()
 
 class FavoriteFilterProxyModel(QSortFilterProxyModel):
+    '''默认歌单：喜欢'''
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -227,6 +236,7 @@ class FavoriteFilterProxyModel(QSortFilterProxyModel):
         return is_favorite == 1
 
 class PlaylistFilterProxyModel(QSortFilterProxyModel):
+    '''用户自定义歌单'''
     def __init__(self,playlist_id:int, parent=None):
         super().__init__(parent)
         self.playlist_id = playlist_id

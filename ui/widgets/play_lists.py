@@ -24,11 +24,8 @@ class PlayLists(QWidget):
         self._custom_list_init()
         self._buttom_spacer_init()
         self._settings_button_init()
+        self._playlists_init()
 
-    @Slot()
-    def init_with_changed_settings(self):
-        self.custom_play_lists.clear()
-        self._update_list_height()
 
     def _default_list_init(self):
         '''默认列表'''
@@ -73,21 +70,8 @@ class PlayLists(QWidget):
         #设置按钮点击
         self.settings_button.clicked.connect(self.settings_widget.show)
 
-    @Slot()
-    def add_new_playlist(self):
-        text, ok = QInputDialog.getText(self, "新建播放列表", "请输入歌单名称:")
-        if ok and text:
-            try:
-                conn = DataBaseUtils.get_new_connection()
-                playlist_id = DataBaseUtils.create_playlist(conn,text)
-                self.create_playlist_finished.emit(playlist_id)
-                self.custom_play_lists.addItem(text)
-                self._update_list_height()
-            finally:
-                conn.close()
-
-    @Slot()
-    def init_with_settings(self):
+    def _playlists_init(self):
+        '''初始化custom_play_lists'''
         try:
             conn = DataBaseUtils.get_new_connection()
             playlists:list[tuple] = DataBaseUtils.get_all_playlists(conn)
@@ -98,7 +82,25 @@ class PlayLists(QWidget):
         finally:
             conn.close()
 
+    @Slot()
+    def init_with_changed_settings(self):
+        '''用于用户更改扫描目录,清空创建的所有歌单'''
+        self.custom_play_lists.clear()
+        self._update_list_height()
 
+    @Slot()
+    def add_new_playlist(self):
+        '''新建播放列表'''
+        text, ok = QInputDialog.getText(self, "新建播放列表", "请输入歌单名称:")
+        if ok and text:
+            try:
+                conn = DataBaseUtils.get_new_connection()
+                playlist_id = DataBaseUtils.create_playlist(conn,text)
+                self.create_playlist_finished.emit(playlist_id)
+                self.custom_play_lists.addItem(text)
+                self._update_list_height()
+            finally:
+                conn.close()
 
 
 
