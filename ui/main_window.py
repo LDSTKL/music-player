@@ -91,23 +91,24 @@ class MainWindow(QWidget):
     def _connect_signal_and_slot(self):
         # 切换音频时动态获取音频信息
         self.player_controls.metadata_changed.connect(self.song_info_panel.on_metadata_changed)
-        # 设置加载完成后通知data_manager
-        self.settings_inited.connect(self.data_manager.init_with_settings)
-        # playlist_view中展示的歌曲双击播放
-        self.playlist_view.play_selected.connect(self.player_controls.play_selected_music)
+
         # 切换playlist_view展示的模型
-        self.data_manager.inited_with_settings.connect(self.playlist_view.change_data_model)
+        self.data_manager.inited_with_settings.connect(self.playlist_view.change_data_model) # 启动应用后首次设置model
         self.data_manager.change_selected_model.connect(self.playlist_view.change_data_model)
         # 切换播放列表
         self.play_lists.change_playlist.connect(self.data_manager.change_model)
         # 创建播放列表
-        self.play_lists.create_playlist_finished.connect(self.data_manager.create_new_custom_model)
-        self.play_lists.create_playlist_finished.connect(self.playlist_view.init_add_to_playlist_actions)
+        self.play_lists.create_playlist_finished.connect(self.data_manager.create_new_custom_model) # 创建具体的代理模型
+        self.play_lists.create_playlist_finished.connect(self.playlist_view.init_add_to_playlist_actions) # 更新上下文菜单,增加新歌单的选项
 
+        # playlist_view中展示的歌曲双击播放
+        self.playlist_view.play_selected.connect(self.player_controls.play_selected_music)
         # 添加歌曲到指定播放列表
         self.playlist_view.add_to_playlist.connect(self.data_manager.add_to_a_playlist)
         # 从播放列表中移除歌曲
         self.playlist_view.remove_from_playlist.connect(self.data_manager.remove_from_a_playlist)
 
+        # 设置加载完成后通知data_manager
+        self.settings_inited.connect(self.data_manager.init_with_settings) # 启动应用后首次初始化
         self.settings.scan_dir_changed.connect(self.data_manager.init_with_changed_settings)
-        self.settings.scan_dir_changed.connect(self.play_lists.init_with_changed_settings)
+        self.settings.scan_dir_changed.connect(self.play_lists.init_with_changed_settings) # 切换目录原来的歌单也清除掉

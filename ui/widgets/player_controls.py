@@ -1,13 +1,16 @@
 '''
 播放控制栏
 '''
+import random
 import sys
 import PySide6.QtGui
-from PySide6.QtCore import QUrl, Slot, Qt, Signal
+from PySide6.QtCore import QUrl, Slot, Qt, Signal, QPoint
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtWidgets import QWidget, QApplication, QPushButton, QVBoxLayout, QHBoxLayout, QSlider, QStyle, \
-    QStyleOptionSlider
+    QStyleOptionSlider, QMenu, QWidgetAction, QLabel
 
+from utils.database_utils import DataBaseUtils
+from utils.settings_utils import SettingsUtils
 
 
 class EnhancedSlider(QSlider):
@@ -38,15 +41,42 @@ class EnhancedSlider(QSlider):
             QStyle.SubControl.SC_SliderHandle,  # sc
             self  # w
         )
+        if self.orientation() ==Qt.Orientation.Horizontal:
+            self.handle_width = handle_rect.width()  # 获取滑块宽度
+            self.true_length = self.width() - self.handle_width  # 获取滑动条真实长度
+            event_position = event.position()
+            # 滑块位置移动到鼠标位置
+            self.setValue(self.minimum()+int((self.maximum() - self.minimum()) *(event_position.x()-self.handle_width/2)/self.true_length))
+            super().mousePressEvent(event)
+        else:
+            self.handle_width = handle_rect.height()
+            self.true_length = self.height() - self.handle_width
+            event_position = event.position()
+            # 滑块位置移动到鼠标位置
+            self.setValue(self.minimum() + int((self.maximum() - self.minimum()) * (self.true_length - event_position.y() + self.handle_width / 2) / self.true_length))
+            super().mousePressEvent(event)
 
-        self.handle_width = handle_rect.width()  # 获取滑块宽度
-        self.true_length = self.width() - self.handle_width  # 获取滑动条真实长度
-        event_position = event.position()
-        # 滑块位置移动到鼠标位置
-        self.setValue(self.minimum()+int((self.maximum() - self.minimum()) *(event_position.x()-self.handle_width/2)/self.true_length))
-        super().mousePressEvent(event)
+class VolumeWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.main_layout = QVBoxLayout(self)
+        self.volume_value = QLabel(str(SettingsUtils.get_settings()['volume']))
+        self.volume_value.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.volume_slider = EnhancedSlider(Qt.Orientation.Vertical)
+        self.volume_slider.setRange(0, 100)
+        self.volume_slider.setValue(SettingsUtils.get_settings()['volume'])
+        self.volume_slider.setFixedHeight(100)
+        self.volume_slider.setFixedWidth(20)
 
+        self.volume_slider.valueChanged.connect(lambda v:self.volume_value.setText(str(v)))
+        self.volume_slider.sliderReleased.connect(self._update_settings)
+        self.main_layout.addWidget(self.volume_value)
+        self.main_layout.addWidget(self.volume_slider)
 
+    @Slot()
+    def _update_settings(self):
+        conn = DataBaseUtils.get_new_connection()
+        DataBaseUtils.update_settings(conn,volume = self.volume_slider.value())
 
 
 class PlayerControls(QWidget):
@@ -56,8 +86,11 @@ class PlayerControls(QWidget):
         super().__init__(parent)
         self.music_list = []
         self.curr_music_index = 0
+        self.play_modes = ['无','循环','单曲循环','随机']
+        self.play_mode = SettingsUtils.get_settings()['play_mode']
         self._ui_init()
         self._player_init()
+        self._volume_slider_init()
         self._connect_slot()
 
 
@@ -78,7 +111,7 @@ class PlayerControls(QWidget):
         self.next_media_button = QPushButton('>>')
         self.prev_media_button = QPushButton('<<')
         self.volume_button = QPushButton('🔉')
-        self.play_mode_button = QPushButton('o')
+        self.play_mode_button = QPushButton(self.play_modes[SettingsUtils.get_settings()['play_mode']])
 
 
         self.controls_layout.addWidget(self.play_mode_button)
@@ -98,12 +131,25 @@ class PlayerControls(QWidget):
 
         self.main_layout.addWidget(self.slider)
 
+    def _volume_slider_init(self):
+        '''音量控制条'''
+        self.volume_menu = QMenu()
+        self.volume_widget = VolumeWidget()
+        self.volume_widget_action = QWidgetAction(self.volume_menu)
+        self.volume_widget_action.setDefaultWidget(self.volume_widget)
+        self.volume_menu.addAction(self.volume_widget_action)
+
+
+
+
+
+
     def _player_init(self):
         '''媒体播放器'''
         self.player = QMediaPlayer()
         self.audioOutput = QAudioOutput()
         self.player.setAudioOutput(self.audioOutput)
-        self.audioOutput.setVolume(0.5)
+        self.audioOutput.setVolume(SettingsUtils.get_settings()['volume']/100)
         # QMediaPlayer 是异步加载媒体,此时获取duration()为0,因此需要利用durationChanged信号
         # 而且利用信号,对后续切换音乐的功能开发奠定了基础
 
@@ -134,6 +180,11 @@ class PlayerControls(QWidget):
         self.player.mediaStatusChanged.connect(self.media_status_changed) # 音乐播放结束后续操作
         self.player.metaDataChanged.connect(lambda :self.metadata_changed.emit(self.player))
 
+        self.volume_widget.volume_slider.valueChanged.connect(self.on_volume_changed)
+        self.volume_button.clicked.connect(self._show_volume_menu)
+
+        self.play_mode_button.clicked.connect(self.change_play_mode)
+
 
     @Slot()
     def pause(self):
@@ -149,19 +200,31 @@ class PlayerControls(QWidget):
         self.pause_button.show()
         self.play_button.hide()
 
+
+    def play_random(self):
+        '''播放'''
+        self.player.setSource(QUrl.fromLocalFile(random.choice(self.music_list)))
+        self.play()
+
     @Slot()
     def play_next(self):
         '''下一首'''
-        self.curr_music_index = (self.curr_music_index+1)% len(self.music_list)
-        self.player.setSource(QUrl.fromLocalFile(self.music_list[self.curr_music_index]) )
-        self.play()
+        if self.play_mode == 3:
+            self.play_random()
+        else:
+            self.curr_music_index = (self.curr_music_index+1)% len(self.music_list)
+            self.player.setSource(QUrl.fromLocalFile(self.music_list[self.curr_music_index]) )
+            self.play()
 
     @Slot()
     def play_prev(self):
         '''上一首'''
-        self.curr_music_index = (self.curr_music_index-1)% len(self.music_list)
-        self.player.setSource(QUrl.fromLocalFile(self.music_list[self.curr_music_index]))
-        self.play()
+        if self.play_mode == 3:
+            self.play_random()
+        else:
+            self.curr_music_index = (self.curr_music_index-1)% len(self.music_list)
+            self.player.setSource(QUrl.fromLocalFile(self.music_list[self.curr_music_index]))
+            self.play()
 
     @Slot()
     def update_slider_when_position_changed(self,p):
@@ -180,8 +243,14 @@ class PlayerControls(QWidget):
     def media_status_changed(self,status:QMediaPlayer.MediaStatus):
         '''处理播放结束后后续操作,与播放方式有关'''
         if status==QMediaPlayer.MediaStatus.EndOfMedia:
-            self.pause()
-
+            if self.play_mode == 0:
+                self.pause()
+            elif self.play_mode ==1:
+                self.play_next()
+            elif self.play_mode == 2:
+                self.play()
+            elif self.play_mode ==3:
+                self.play_random()
 
     @Slot()
     def play_selected_music(self,path:str,music_list:list[str]):
@@ -194,11 +263,40 @@ class PlayerControls(QWidget):
         self.player.setSource(QUrl.fromLocalFile(path))
         self.play()
 
+    @Slot()
+    def on_volume_changed(self,value:int):
+        self.audioOutput.setVolume(value/100)
+
+    @Slot()
+    def _show_volume_menu(self):
+        # 获取菜单的建议大小（确保高度准确）
+        menu_size = self.volume_menu.sizeHint()
+
+        # 计算位置：
+        # x: 按钮中心 - 菜单宽度的一半 (实现水平居中)
+        # y: 按钮顶部 - 菜单高度 (实现在按钮上方显示)
+        pos = self.volume_button.mapToGlobal(QPoint(
+            self.volume_button.width() / 2 - menu_size.width() / 2,
+            -menu_size.height()
+        ))
+
+        self.volume_menu.exec(pos)
+
+
+
+    @Slot()
+    def change_play_mode(self):
+        self.play_mode = (self.play_mode+1) % len(self.play_modes)
+        self.play_mode_button.setText(self.play_modes[self.play_mode])
+        conn = DataBaseUtils.get_new_connection()
+        DataBaseUtils.update_settings(conn,play_mode = self.play_mode)
+
+
 
 
 
 if __name__ == '__main__':
     app = QApplication()
-    window = PlayerControls()
+    window = EnhancedSlider(Qt.Orientation.Vertical)
     window.show()
     sys.exit(app.exec())

@@ -14,10 +14,10 @@ class TitleBar(QWidget):
     def _ui_init(self):
         '''初始化UI'''
         self.main_layout = QHBoxLayout(self) # 主要布局,水平布局
-        if self.is_left:
-            self._title_init()
-        else:
-            self._button_init()
+        # if self.is_left:
+        self._title_init()
+        # else:
+        self._button_init()
 
     def _title_init(self):
         self.label = QLabel('hello world')

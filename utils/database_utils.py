@@ -65,6 +65,21 @@ class DataBaseUtils:
             cursor.execute(
                 "CREATE INDEX IF NOT EXISTS idx_playlist_items_playlist ON playlist_items(playlist_id, position)")
 
+            # 创建设置表 (单行固定结构)
+            cursor.execute("""
+                            CREATE TABLE IF NOT EXISTS settings (
+                                id INTEGER PRIMARY KEY CHECK (id = 1),
+                                scan_dir TEXT DEFAULT 'C:\\music',
+                                curr_music_index INTEGER DEFAULT 0,
+                                music_list TEXT DEFAULT '[]',
+                                volume INTEGER DEFAULT 50,
+                                play_mode INTEGER DEFAULT 0
+                            )
+                        """)
+
+            # 确保存在默认设置行
+            cursor.execute("INSERT OR IGNORE INTO settings (id) VALUES (1)")
+
             conn.commit()
         except Exception as e:
             print(f"数据库初始化出错: {e}")
@@ -231,6 +246,42 @@ class DataBaseUtils:
             conn.commit()
         except sqlite3.Error as e:
             print(f"清除数据失败: {e}")
+
+    @classmethod
+    def get_settings(cls, conn: sqlite3.Connection) -> dict:
+        """获取所有用户设置"""
+        cursor = conn.cursor()
+        cursor.execute("SELECT scan_dir, curr_music_index, music_list, volume, play_mode FROM settings WHERE id = 1")
+        row = cursor.fetchone()
+        import json
+        return {
+            "scan_dir": row[0],
+            "curr_music_index": row[1],
+            "music_list": json.loads(row[2]),
+            "volume": row[3],
+            "play_mode": row[4]
+        }
+
+    @classmethod
+    def update_settings(cls, conn: sqlite3.Connection, **kwargs):
+        """更新部分或全部设置项"""
+        if not kwargs:
+            return
+
+        import json
+        set_clauses = []
+        values = []
+
+        for key, value in kwargs.items():
+            if key == "music_list":
+                value = json.dumps(value)
+            set_clauses.append(f"{key} = ?")
+            values.append(value)
+
+        query = f"UPDATE settings SET {', '.join(set_clauses)} WHERE id = 1"
+        cursor = conn.cursor()
+        cursor.execute(query, values)
+        conn.commit()
 
 
 
