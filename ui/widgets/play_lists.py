@@ -1,10 +1,16 @@
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import Signal, Slot, Qt
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QSizePolicy, QSpacerItem, QListWidget, \
-    QInputDialog
+    QInputDialog, QAbstractItemView, QStyledItemDelegate
 
 from ui.widgets.settings import Settings
 from utils.database_utils import DataBaseUtils
+
+class CenterAlignDelegate(QStyledItemDelegate):
+    '''实现item居中'''
+    def initStyleOption(self, option, index):
+        super().initStyleOption(option, index)
+        option.displayAlignment = Qt.AlignmentFlag.AlignCenter
 
 
 class PlayLists(QWidget):
@@ -12,13 +18,16 @@ class PlayLists(QWidget):
     create_playlist_finished = Signal(int)
     def __init__(self,settings:Settings,parent =None):
         super().__init__(parent)
+        self.setFixedHeight(350)
         self.settings_widget = settings
         self._ui_init()
         self._connect_signals_and_slots()
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def _ui_init(self):
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setSpacing(0)
+        self.main_layout.setContentsMargins(0,0,0,0)
         self._default_list_init()
         self._add_playlist_button_init()
         self._custom_list_init()
@@ -30,7 +39,9 @@ class PlayLists(QWidget):
     def _default_list_init(self):
         '''默认列表'''
         self.my_music = QPushButton('我的音乐')
+        self.my_music.setFixedHeight(40)
         self.like = QPushButton('喜欢')
+        self.like.setFixedHeight(40)
 
         self.main_layout.addWidget(self.my_music)
         self.main_layout.addWidget(self.like)
@@ -38,13 +49,22 @@ class PlayLists(QWidget):
     def _add_playlist_button_init(self):
         '''添加播放列表的按钮'''
         self.add_playlist_button=QPushButton('新建播放列表')
+        self.add_playlist_button.setFixedHeight(40)
         self.main_layout.addWidget(self.add_playlist_button)
 
     def _custom_list_init(self):
         '''用户创建的歌单列表'''
         self.custom_play_lists = QListWidget()
+        self.delegate = CenterAlignDelegate()
+        self.custom_play_lists.setItemDelegate(self.delegate)
+        self.custom_play_lists.setStyleSheet('''QListWidget::item {
+                                                    height: 40px;
+                                                }''')
+
+
 
         self.custom_play_lists.setSizePolicy(self.custom_play_lists.sizePolicy().horizontalPolicy(),QSizePolicy.Policy.Preferred)
+        self.custom_play_lists.setVerticalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
 
         self._update_list_height()
 
@@ -56,6 +76,7 @@ class PlayLists(QWidget):
 
     def _settings_button_init(self):
         self.settings_button=QPushButton('设置')
+        self.settings_button.setFixedHeight(40)
         self.main_layout.addWidget(self.settings_button)
 
 
@@ -91,7 +112,7 @@ class PlayLists(QWidget):
     @Slot()
     def add_new_playlist(self):
         '''新建播放列表'''
-        text, ok = QInputDialog.getText(self, "新建播放列表", "请输入歌单名称:")
+        text, ok = QInputDialog.getText(None, "新建播放列表", "请输入歌单名称:")
         if ok and text:
             try:
                 conn = DataBaseUtils.get_new_connection()
@@ -116,5 +137,5 @@ class PlayLists(QWidget):
             # 考虑列表边框和间距
             height = item_height * count + 4  # 4px 为安全边距
 
-        self.custom_play_lists.setFixedHeight(min(height, 300))
+        self.custom_play_lists.setFixedHeight(min(height, 190))
 

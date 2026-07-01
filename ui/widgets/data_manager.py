@@ -4,6 +4,7 @@ from PySide6.QtCore import QSortFilterProxyModel, QThread, Signal, Slot, Qt, QMo
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from PySide6.QtWidgets import QLineEdit, QWidget
 
+from commons.enhanced_widget import HoverProxyModel
 from constants.role_constants import RoleConstants
 from utils.audio_metadata_utils import AudioMetaDataUtils
 from utils.database_utils import DataBaseUtils
@@ -21,7 +22,7 @@ class DataManager(QWidget):
         self.total_data_model = QStandardItemModel()
         # 设置表头标签
         self.total_data_model.setHorizontalHeaderLabels(["歌曲名", "歌手", "专辑"])
-        self.total_music = QSortFilterProxyModel()
+        self.total_music = HoverProxyModel()
         self.total_music.setSourceModel(self.total_data_model)
         self.favor_music = FavoriteFilterProxyModel()
         self.favor_music.setSourceModel(self.total_data_model)
@@ -170,41 +171,49 @@ class MusicScanner(QThread):
         self.scan_path = scan_path
 
     def run(self):
-        # 数据库中有数据,读取数据库
+        '''扫描文件夹中的音乐,并且文件夹中多于数据库中的音乐被视为新增的音乐,少于数据库中的音乐被视为删除的音乐'''
         conn = DataBaseUtils.get_new_connection()
         try:
             music_list = DataBaseUtils.select_all_music(conn)
+            music_paths = {music[1] for music in music_list}
+            folder_music_paths = set()
+            for file in os.listdir(self.scan_path):
+                if file.endswith('.mp3'):
+                    folder_music_paths.add(os.path.join(self.scan_path, file))
 
-            if len(music_list) > 0:
-                for music in music_list:
+            # 计算差集
+            new_files = folder_music_paths - music_paths  # 新增的音乐
+            deleted_files = music_paths - folder_music_paths #删除的音乐
+
+            # 4. 处理新增文件
+            for full_path in new_files:
+                metadata = AudioMetaDataUtils.get_music_meta(full_path)
+
+                music_id = DataBaseUtils.insert_or_update_music(conn, full_path, metadata['title']
+                                                                , metadata['artist']
+                                                                , metadata['album']
+                                                                , metadata['genre']
+                                                                , metadata['year']
+                                                                )
+                metadata = {**metadata, 'id': music_id, 'full_path': full_path, 'is_favorite': 0}
+                self.add_item.emit(metadata)
+
+            # 5. 处理删除文件：从数据库删除
+            for full_path in deleted_files:
+                DataBaseUtils.delete_music_by_path(conn, full_path)
+
+            # 6. 重新发送数据库中未变化的文件（用于UI初始化）
+            for music in music_list:
+                if music[1] not in new_files and music[1] not in deleted_files:
                     metadata = {
-                        'id':music[0],
-                        'full_path':music[1],
+                        'id': music[0],
+                        'full_path': music[1],
                         'title': music[2],
                         'artist': music[3],
                         'album': music[4],
-                        'is_favorite':music[7]
+                        'is_favorite': music[7]
                     }
                     self.add_item.emit(metadata)
-            else:
-                # 数据库中没有数据,扫描文件夹
-                for file in os.listdir(self.scan_path):
-                    if file.endswith('.mp3'):
-                        full_path = os.path.join(self.scan_path, file)
-                        metadata = AudioMetaDataUtils.get_music_meta(full_path)
-                        # 更新数据库
-                        music_id = DataBaseUtils.insert_or_update_music(conn, full_path, metadata['title']
-                                                                        , metadata['artist']
-                                                                        , metadata['album']
-                                                                        , metadata['genre']
-                                                                        , metadata['year'])
-                        # 添加数据到data_model
-                        metadata={**metadata,
-                                  'id':music_id,
-                                  'full_path':full_path,
-                                  'is_favorite':0
-                                  }
-                        self.add_item.emit(metadata)
         finally:
             conn.close()
 
@@ -222,7 +231,7 @@ class PlaylistScanner(QThread):
         finally:
             conn.close()
 
-class FavoriteFilterProxyModel(QSortFilterProxyModel):
+class FavoriteFilterProxyModel(HoverProxyModel):
     '''默认歌单：喜欢'''
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -235,7 +244,7 @@ class FavoriteFilterProxyModel(QSortFilterProxyModel):
         # 只返回 is_favorite 为 1 (或 True) 的行
         return is_favorite == 1
 
-class PlaylistFilterProxyModel(QSortFilterProxyModel):
+class PlaylistFilterProxyModel(HoverProxyModel):
     '''用户自定义歌单'''
     def __init__(self,playlist_id:int, parent=None):
         super().__init__(parent)

@@ -1,7 +1,7 @@
 '''
 歌曲信息面板
 '''
-from PySide6.QtCore import Slot
+from PySide6.QtCore import Slot, Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtMultimedia import QMediaPlayer, QMediaMetaData
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QVBoxLayout, QSizePolicy
@@ -17,6 +17,7 @@ class SongInfoPanel(QWidget):
         self.album=None
         self.cover_image=None
         self._ui_init()
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def _ui_init(self):
         self.main_layout = QHBoxLayout(self)

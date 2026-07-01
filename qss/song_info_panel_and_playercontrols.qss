@@ -1,0 +1,5 @@
+
+
+QWidget#song_info_panel_and_playercontrols{
+    background-color: #3a3329;
+}

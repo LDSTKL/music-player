@@ -1,0 +1,24 @@
+
+
+*{
+    color: white
+}
+
+QWidget#main_window{
+    background-color: #656564;
+}
+
+
+QPushButton{
+    background-color: transparent;
+}
+
+
+QPushButton:hover,
+QPushButton:pressed {
+    border: none;
+    background-color: #858585;  /* 或与正常状态相同 */
+}
+
+
+

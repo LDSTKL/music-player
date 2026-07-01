@@ -20,6 +20,7 @@ class MainWindow(QWidget):
         self._data_manager_init()
         self._window_init() # 窗体初始化
         self._ui_init() # 窗体内UI初始化
+        self.setWindowTitle('Music Player')
 
     def _database_init(self):
         DataBaseUtils.init_database()
@@ -35,6 +36,7 @@ class MainWindow(QWidget):
     def _ui_init(self):
         '''初始化UI'''
         self.main_layout = QVBoxLayout(self)  # 主要布局,垂直布局
+        self.main_layout.setSpacing(0)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self._settings_init()
         self.up_part_init()
@@ -52,12 +54,16 @@ class MainWindow(QWidget):
         '''左上角+右上角UI初始化'''
         self.up_part_layout = QHBoxLayout()
         self.up_part_layout.setSpacing(0)
+        self.up_part_layout.setContentsMargins(0, 0, 0, 0)
 
         self.main_layout.addLayout(self.up_part_layout)
 
     def left_part_init(self):
         '''左上角部分UI初始化'''
         self.left_part_layout = QVBoxLayout()
+        self.left_part_layout.setSpacing(0)
+        self.left_part_layout.setContentsMargins(0,0,0,0)
+
         self.left_title_bar = TitleBar(self,True)
         self.left_part_layout.addWidget(self.left_title_bar)
         self.play_lists= PlayLists(self.settings)
@@ -68,17 +74,25 @@ class MainWindow(QWidget):
     def right_part_init(self):
         '''右上角部分UI初始化'''
         self.right_part_layout = QVBoxLayout()
+        self.right_part_layout.setSpacing(0)
+        self.right_part_layout.setContentsMargins(0, 0, 0, 0)
+
         self.right_title_bar = TitleBar(self,False)
         self.right_part_layout.addWidget(self.right_title_bar)
         self.playlist_view = PlayListView()
+
         self.right_part_layout.addWidget(self.playlist_view)
         self.up_part_layout.addLayout(self.right_part_layout,stretch=3)
 
 
     def _song_info_panel_and_playercontrols_init(self):
         self.song_info_panel_and_player_controls_layout = QHBoxLayout()
+        self.song_info_panel_and_player_controls_layout.setSpacing(0)
+        self.song_info_panel_and_player_controls_layout.setContentsMargins(0,0,0,0)
         self.song_info_panel = SongInfoPanel(self)
+        self.song_info_panel.setObjectName('song_info_panel_and_playercontrols')
         self.player_controls = PlayerControls(self)
+        self.player_controls.setObjectName('song_info_panel_and_playercontrols')
         self.song_info_panel_and_player_controls_layout.addWidget(self.song_info_panel,stretch=1)
         self.song_info_panel_and_player_controls_layout.addWidget(self.player_controls,stretch=2)
 
@@ -86,6 +100,7 @@ class MainWindow(QWidget):
 
     def _settings_init(self):
         self.settings = Settings()
+
 
 
     def _connect_signal_and_slot(self):

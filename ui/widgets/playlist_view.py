@@ -3,14 +3,16 @@
 '''
 
 
-from PySide6.QtCore import Slot, Signal, QModelIndex, QSortFilterProxyModel, Qt, QPoint
-from PySide6.QtGui import QAction, QStandardItemModel
+from PySide6.QtCore import Slot, Signal, QModelIndex, QSortFilterProxyModel, Qt, QPoint, QEvent
+from PySide6.QtGui import QAction, QStandardItemModel, QColor, QBrush
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QTableView, \
-    QHeaderView, QAbstractItemView, QMenu
+    QHeaderView, QAbstractItemView, QMenu, QStyledItemDelegate
 
+from commons.enhanced_widget import HoverTableView
 from constants.role_constants import RoleConstants
 from ui.widgets.data_manager import FavoriteFilterProxyModel, PlaylistFilterProxyModel
 from utils.database_utils import DataBaseUtils
+
 
 
 class PlayListView(QWidget):
@@ -20,6 +22,7 @@ class PlayListView(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setFixedHeight(350)
         self.proxy_data_model: QSortFilterProxyModel = None
         self.curr_music_list = []
         self.add_to_playlist_actions=[]
@@ -29,10 +32,11 @@ class PlayListView(QWidget):
 
     def _ui_init(self):
         self.main_layout = QHBoxLayout(self)
+        self.main_layout.setContentsMargins(0,0,0,0)
         self._init_table()
 
     def _init_table(self):
-        self.table_view = QTableView()
+        self.table_view = HoverTableView()
         # 隐藏左侧的行号列
         self.table_view.verticalHeader().hide()
         # 让列宽自适应内容
@@ -45,6 +49,12 @@ class PlayListView(QWidget):
         self.table_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         # 开启自带的排序功能
         self.table_view.setSortingEnabled(True)
+        # 禁用表头选中高亮
+        self.table_view.horizontalHeader().setHighlightSections(False)
+        # 设置表头高
+        self.table_view.verticalHeader().setDefaultSectionSize(30)
+        # 实现平滑滚动
+        self.table_view.setVerticalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
 
         self.table_view.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.main_layout.addWidget(self.table_view)
@@ -72,7 +82,7 @@ class PlayListView(QWidget):
         '''双击播放音乐'''
         # 拿到源对象和源对象中对应的索引
         source_index = self.proxy_data_model.mapToSource(proxy_index)
-        source_model:QStandardItemModel = self.proxy_data_model.sourceModel()
+        source_model = self.proxy_data_model.sourceModel()
 
         # QModelIndex包含行和列,该方法获取同行第0列
         title = source_index.siblingAtColumn(0)
@@ -86,7 +96,7 @@ class PlayListView(QWidget):
     def show_context_menu(self,pos:QPoint):
         index = self.table_view.indexAt(pos)
         source_index = self.proxy_data_model.mapToSource(index)
-        source_model:QStandardItemModel = self.proxy_data_model.sourceModel()
+        source_model = self.proxy_data_model.sourceModel()
         title_index = source_index.siblingAtColumn(0)
         item = source_model.itemFromIndex(title_index)
         music_id = item.data(RoleConstants.store_music_id_role)

@@ -1,0 +1,45 @@
+QTableView {
+    color: #FFFFFF;
+    background-color: #33373B;
+    border: 0px;
+}
+
+
+QTableView::item:selected {
+    background-color: #2ABf9E;
+}
+
+QHeaderView::section {
+    background-color: #33373B;
+    border: 0px;
+    height: 30px;
+}
+
+
+QHeaderView::section:hover {
+    background-color: #2ABf9E;
+}
+
+
+QTableView {
+    gridline-color: transparent;       /* 隐藏网格线 */
+}
+QTableView QScrollBar:vertical {
+    width: 8px;
+    background-color: #656564;         /* 【改】用实色替代 transparent */
+}
+QTableView QScrollBar::handle:vertical {
+    background-color: #858585;         /* 与 QListWidget 一致 */
+    min-height: 20px;
+}
+QTableView QScrollBar::handle:vertical:hover {
+    background-color: #7c7c7c;         /* 与 QListWidget 一致 */
+}
+QTableView QScrollBar::add-line:vertical,
+QTableView QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+QTableView QScrollBar::add-page:vertical,
+QTableView QScrollBar::sub-page:vertical {
+    background-color: #656564;         /* 【改】用实色替代 transparent */
+}

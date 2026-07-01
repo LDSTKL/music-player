@@ -1,6 +1,6 @@
 import sys
 
-from PySide6.QtCore import Slot, Signal
+from PySide6.QtCore import Slot, Signal, Qt
 from PySide6.QtWidgets import QWidget, QLabel, QHBoxLayout, QFileDialog, QVBoxLayout, QPushButton, QLineEdit, \
     QApplication
 
@@ -14,6 +14,8 @@ class Settings(QWidget):
         super().__init__(parent)
         self.settings =None
         self._ui_init()
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setWindowTitle('设置')
 
     def _ui_init(self):
         self.main_layout = QVBoxLayout(self) # 布局

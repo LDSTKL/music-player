@@ -4,11 +4,13 @@
 import random
 import sys
 import PySide6.QtGui
-from PySide6.QtCore import QUrl, Slot, Qt, Signal, QPoint
+from PySide6.QtGui import QIcon
+from PySide6.QtCore import QUrl, Slot, Qt, Signal, QPoint, QSize
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtWidgets import QWidget, QApplication, QPushButton, QVBoxLayout, QHBoxLayout, QSlider, QStyle, \
-    QStyleOptionSlider, QMenu, QWidgetAction, QLabel
+    QStyleOptionSlider, QMenu, QWidgetAction, QLabel, QSpacerItem, QSizePolicy
 
+from utils.assets_utils import AssetsUtils
 from utils.database_utils import DataBaseUtils
 from utils.settings_utils import SettingsUtils
 
@@ -57,8 +59,8 @@ class EnhancedSlider(QSlider):
             super().mousePressEvent(event)
 
 class VolumeWidget(QWidget):
-    def __init__(self):
-        super().__init__()
+    def __init__(self,parent =None):
+        super().__init__(parent)
         self.main_layout = QVBoxLayout(self)
         self.volume_value = QLabel(str(SettingsUtils.get_settings()['volume']))
         self.volume_value.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -73,6 +75,8 @@ class VolumeWidget(QWidget):
         self.main_layout.addWidget(self.volume_value)
         self.main_layout.addWidget(self.volume_slider)
 
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
     @Slot()
     def _update_settings(self):
         conn = DataBaseUtils.get_new_connection()
@@ -86,12 +90,13 @@ class PlayerControls(QWidget):
         super().__init__(parent)
         self.music_list = []
         self.curr_music_index = 0
-        self.play_modes = ['无','循环','单曲循环','随机']
+        self.play_modes = ['repeat_line.png','repeat_line.png','repeat_one_line.png','shuffle_line.png']
         self.play_mode = SettingsUtils.get_settings()['play_mode']
         self._ui_init()
         self._player_init()
         self._volume_slider_init()
         self._connect_slot()
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
 
 
@@ -105,21 +110,42 @@ class PlayerControls(QWidget):
     def _controls_init(self):
         '''音乐控制'''
         self.controls_layout = QHBoxLayout() # 布局
-        self.pause_button = QPushButton('||')
+        self.pause_button = QPushButton(QIcon(AssetsUtils.get_icon_full_path_by_asset_name('pause_line.png')),'')
         self.pause_button.hide()
-        self.play_button = QPushButton('>')
-        self.next_media_button = QPushButton('>>')
-        self.prev_media_button = QPushButton('<<')
-        self.volume_button = QPushButton('🔉')
-        self.play_mode_button = QPushButton(self.play_modes[SettingsUtils.get_settings()['play_mode']])
+        self.play_button = QPushButton(QIcon(AssetsUtils.get_icon_full_path_by_asset_name('play_line.png')),'')
+        self.prev_media_button = QPushButton(QIcon(AssetsUtils.get_icon_full_path_by_asset_name('skip_previous_line.png')),'')
+        self.next_media_button = QPushButton(QIcon(AssetsUtils.get_icon_full_path_by_asset_name('skip_forward_line.png')),'')
+        self.volume_button = QPushButton(QIcon(AssetsUtils.get_icon_full_path_by_asset_name('volume_line.png')),'')
+        self.play_mode_button = QPushButton()
+        self.change_play_mode(True)
 
+        self.pause_button.setFixedSize(48,48)
+        self.play_button.setFixedSize(48,48)
+        self.prev_media_button.setFixedSize(36,36)
+        self.next_media_button.setFixedSize(36,36)
+        self.volume_button.setFixedSize(36,36)
+        self.play_mode_button.setFixedSize(36,36)
 
+        self.play_button.setIconSize(QSize(48, 48))
+        self.pause_button.setIconSize(QSize(48, 48))
+
+        self.pause_button.setObjectName('player_control_button')
+        self.play_button.setObjectName('player_control_button')
+        self.prev_media_button.setObjectName('player_control_button')
+        self.next_media_button.setObjectName('player_control_button')
+        self.volume_button.setObjectName('player_control_button')
+        self.play_mode_button.setObjectName('player_control_button')
+
+        self.spacer = QSpacerItem(0,0,QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Maximum)
+
+        self.controls_layout.addSpacerItem(self.spacer)
         self.controls_layout.addWidget(self.play_mode_button)
         self.controls_layout.addWidget(self.prev_media_button)
         self.controls_layout.addWidget(self.play_button)
         self.controls_layout.addWidget(self.pause_button)
         self.controls_layout.addWidget(self.next_media_button)
         self.controls_layout.addWidget(self.volume_button)
+        self.controls_layout.addSpacerItem(self.spacer)
 
         self.main_layout.addLayout(self.controls_layout)
 
@@ -134,13 +160,41 @@ class PlayerControls(QWidget):
     def _volume_slider_init(self):
         '''音量控制条'''
         self.volume_menu = QMenu()
+        self.volume_menu.setStyleSheet('''
+                    background-color: #656564;
+                    color: white;''')
+        print(self.volume_menu.contentsMargins())
         self.volume_widget = VolumeWidget()
+        self.volume_widget.setStyleSheet('''
+        QSlider::groove:vertical {
+            width: 4px;
+            background-color: #333333;  /* 轨道背景 */
+            border-radius: 2px;
+        }
+        
+        QSlider::sub-page:vertical {
+            background-color: transparent;  /* 上方透明 */
+        }
+        
+        QSlider::add-page:vertical {
+            background-color: #2ABf9E;  /* 下方有色 */
+        }
+        
+        QSlider::handle:vertical {
+            height: 12px;
+            width: 12px;
+            margin: 0 -4px;  /* 让滑块水平居中并突出 */
+            background-color: #FFFFFF;
+            border-radius: 6px;
+        }
+        
+        QSlider::handle:vertical:hover {
+            background-color: #EEEEEE;
+        }
+        ''')
         self.volume_widget_action = QWidgetAction(self.volume_menu)
         self.volume_widget_action.setDefaultWidget(self.volume_widget)
         self.volume_menu.addAction(self.volume_widget_action)
-
-
-
 
 
 
@@ -285,9 +339,30 @@ class PlayerControls(QWidget):
 
 
     @Slot()
-    def change_play_mode(self):
-        self.play_mode = (self.play_mode+1) % len(self.play_modes)
-        self.play_mode_button.setText(self.play_modes[self.play_mode])
+    def change_play_mode(self,is_init:bool = False):
+        if not is_init:
+            self.play_mode = (self.play_mode+1) % len(self.play_modes)
+        self.play_mode_button.setIcon(QIcon(AssetsUtils.get_icon_full_path_by_asset_name(self.play_modes[self.play_mode])))
+        if self.play_mode != 0:
+            self.play_mode_button.setStyleSheet('''
+                QPushButton {
+                    background-color: #26211e;
+                }
+                QPushButton:hover {
+                    background-color: #858585;
+                }''')
+            if self.play_mode==1: self.play_mode_button.setToolTip('循环播放')
+            if self.play_mode==2: self.play_mode_button.setToolTip('单曲循环')
+            if self.play_mode==3: self.play_mode_button.setToolTip('随机播放')
+        else:
+            self.play_mode_button.setStyleSheet('''
+                QPushButton {
+                    background-color: transparent;
+                }
+                QPushButton:hover {
+                    background-color: #858585;
+                }''')
+            self.play_mode_button.setToolTip('循环关闭')
         conn = DataBaseUtils.get_new_connection()
         DataBaseUtils.update_settings(conn,play_mode = self.play_mode)
 

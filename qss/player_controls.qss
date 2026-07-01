@@ -1,0 +1,3 @@
+QPushButton#player_control_button{
+    border-radius: 18px;
+}

@@ -1,0 +1,49 @@
+QListWidget {
+    color: #FFFFFF;
+    background-color: transparent;
+    border: 0px;
+    outline: none;   /* 确保 item 获取焦点时没有虚线框 */
+}
+
+
+QListWidget::item:selected {
+    background-color: transparent;
+}
+
+/* 关键：失去焦点时的选中状态 */
+QListWidget::item:selected:!active {
+    background-color: transparent;
+    color: #FFFFFF;       /* 强制保持白色 */
+}
+
+
+QListWidget::item:hover {
+    background-color: #858585;
+}
+
+
+
+QListWidget QScrollBar:vertical {
+    width: 8px;
+    background-color: transparent;
+}
+
+QListWidget QScrollBar::handle:vertical {
+    background-color: #858585;
+    border-radius: 4px;
+    min-height: 20px;
+}
+
+QListWidget QScrollBar::handle:vertical:hover {
+    background-color: #7c7c7c;
+}
+
+QListWidget QScrollBar::add-line:vertical,
+QListWidget QScrollBar::sub-line:vertical {
+    height: 0px;  /* 隐藏上下箭头 */
+}
+
+QListWidget QScrollBar::add-page:vertical,
+QListWidget QScrollBar::sub-page:vertical {
+    background-color: transparent;  /* 滑块轨道背景 */
+}

@@ -120,6 +120,25 @@ class DataBaseUtils:
             return -1
 
     @classmethod
+    def delete_music_by_path(cls, conn: sqlite3.Connection, file_path: str):
+        """根据文件路径删除音乐记录"""
+        cursor = conn.cursor()
+        try:
+            # 先获取music_id，用于清理关联的播放列表项
+            cursor.execute("SELECT id FROM music_library WHERE file_path = ?", (file_path,))
+            row = cursor.fetchone()
+
+            if row:
+                music_id = row[0]
+                # 删除该音乐在所有播放列表中的引用
+                cursor.execute("DELETE FROM playlist_items WHERE music_id = ?", (music_id,))
+                # 删除音乐记录
+                cursor.execute("DELETE FROM music_library WHERE file_path = ?", (file_path,))
+                conn.commit()
+        except sqlite3.Error as e:
+            print(f"删除音乐记录失败: {e}")
+
+    @classmethod
     def select_all_music(cls, conn:sqlite3.Connection)->list[tuple]:
         """获取所有可用的音乐列表"""
         cursor = conn.cursor()

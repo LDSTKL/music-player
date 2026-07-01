@@ -1,0 +1,12 @@
+QMenu {
+    background-color: #656564;
+}
+
+QMenu::item {
+    background-color: transparent;  /* 菜单项背景 */
+}
+
+QMenu::item:selected {
+    background-color:  #2ABf9E;  /* 选中项背景 */
+}
+
