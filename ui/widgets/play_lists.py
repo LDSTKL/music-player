@@ -1,7 +1,7 @@
-from PySide6.QtCore import Signal, Slot, Qt
+from PySide6.QtCore import Signal, Slot, Qt, QPoint
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QSizePolicy, QSpacerItem, QListWidget, \
-    QInputDialog, QAbstractItemView, QStyledItemDelegate
+    QInputDialog, QAbstractItemView, QStyledItemDelegate, QMenu
 
 from ui.widgets.settings import Settings
 from utils.database_utils import DataBaseUtils
@@ -16,6 +16,7 @@ class CenterAlignDelegate(QStyledItemDelegate):
 class PlayLists(QWidget):
     change_playlist = Signal(int)
     create_playlist_finished = Signal(int)
+    delete_playlist_finished = Signal(int) # 歌单的下标
     def __init__(self,settings:Settings,parent =None):
         super().__init__(parent)
         self.setFixedHeight(350)
@@ -33,7 +34,7 @@ class PlayLists(QWidget):
         self._custom_list_init()
         self._buttom_spacer_init()
         self._settings_button_init()
-        self._playlists_init()
+        self._custom_list_item_init()
 
 
     def _default_list_init(self):
@@ -65,6 +66,7 @@ class PlayLists(QWidget):
 
         self.custom_play_lists.setSizePolicy(self.custom_play_lists.sizePolicy().horizontalPolicy(),QSizePolicy.Policy.Preferred)
         self.custom_play_lists.setVerticalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
+        self.custom_play_lists.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
 
         self._update_list_height()
 
@@ -90,8 +92,10 @@ class PlayLists(QWidget):
         self.add_playlist_button.clicked.connect(self.add_new_playlist)
         #设置按钮点击
         self.settings_button.clicked.connect(self.settings_widget.show)
+        # 上下文菜单
+        self.custom_play_lists.customContextMenuRequested.connect(self._show_context_menu)
 
-    def _playlists_init(self):
+    def _custom_list_item_init(self):
         '''初始化custom_play_lists'''
         try:
             conn = DataBaseUtils.get_new_connection()
@@ -139,3 +143,19 @@ class PlayLists(QWidget):
 
         self.custom_play_lists.setFixedHeight(min(height, 190))
 
+    @Slot()
+    def _show_context_menu(self, pos: QPoint):
+        index = self.custom_play_lists.indexAt(pos)
+        if not index.isValid():
+            return
+
+        context_menu = QMenu(self)
+        action = context_menu.addAction('删除播放列表')
+        action.triggered.connect(lambda: self._delete_playlist(index.row()))
+
+        context_menu.exec(self.custom_play_lists.viewport().mapToGlobal(pos))
+
+    def _delete_playlist(self,row:int):
+        self.custom_play_lists.takeItem(row)
+        self._update_list_height()
+        self.delete_playlist_finished.emit(row+2)

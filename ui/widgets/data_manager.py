@@ -15,6 +15,7 @@ from utils.database_utils import DataBaseUtils
 class DataManager(QWidget):
     inited_with_settings = Signal(QSortFilterProxyModel)
     change_selected_model = Signal(QSortFilterProxyModel)
+    delete_playlist_finished = Signal()
     def __init__(self):
         super().__init__()
         self.scaners:list[QThread]=[]
@@ -152,6 +153,18 @@ class DataManager(QWidget):
                         # 刷新模型中的数据
                         model.update_music_ids(model.music_ids)
                         break
+        finally:
+            conn.close()
+    @Slot()
+    def delete_a_custom_model(self,row:int):
+        if row <2:
+            return
+        removed_model:PlaylistFilterProxyModel = self.model_list.pop(row)
+        conn = DataBaseUtils.get_new_connection()
+        try:
+            DataBaseUtils.delete_playlist(conn,removed_model.playlist_id)
+            self.delete_playlist_finished.emit()
+            self.change_selected_model.emit(self.model_list[0])
         finally:
             conn.close()
 

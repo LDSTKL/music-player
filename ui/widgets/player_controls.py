@@ -163,7 +163,6 @@ class PlayerControls(QWidget):
         self.volume_menu.setStyleSheet('''
                     background-color: #656564;
                     color: white;''')
-        print(self.volume_menu.contentsMargins())
         self.volume_widget = VolumeWidget()
         self.volume_widget.setStyleSheet('''
         QSlider::groove:vertical {

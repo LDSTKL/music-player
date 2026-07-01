@@ -110,11 +110,14 @@ class MainWindow(QWidget):
         # 切换playlist_view展示的模型
         self.data_manager.inited_with_settings.connect(self.playlist_view.change_data_model) # 启动应用后首次设置model
         self.data_manager.change_selected_model.connect(self.playlist_view.change_data_model)
+        self.data_manager.delete_playlist_finished.connect(self.playlist_view.init_add_to_playlist_actions)  # 删除歌单后更新上下文菜单
         # 切换播放列表
         self.play_lists.change_playlist.connect(self.data_manager.change_model)
         # 创建播放列表
         self.play_lists.create_playlist_finished.connect(self.data_manager.create_new_custom_model) # 创建具体的代理模型
         self.play_lists.create_playlist_finished.connect(self.playlist_view.init_add_to_playlist_actions) # 更新上下文菜单,增加新歌单的选项
+        self.play_lists.delete_playlist_finished.connect(self.data_manager.delete_a_custom_model) # 删除相应代理模型
+
 
         # playlist_view中展示的歌曲双击播放
         self.playlist_view.play_selected.connect(self.player_controls.play_selected_music)
