@@ -14,6 +14,7 @@ class TitleBar(QWidget):
         self.mouse_pressed = False  # 用于实现窗口拖拽
         self.is_left = is_left
         self._ui_init()
+        self.setObjectName('titlebar')
 
     def _ui_init(self):
         '''初始化UI'''
@@ -36,12 +37,10 @@ class TitleBar(QWidget):
         self.close_button = QPushButton()
         self.close_button.setIcon(QIcon(AssetsUtils.get_icon_full_path_by_asset_name('close_fill.png')))
         self.close_button.setFixedSize(30,30)
-        self.close_button.setObjectName('titlebar_button')
         self.close_button.clicked.connect(self.parent.close)
         self.minmum_button = QPushButton()
         self.minmum_button.setIcon(QIcon(AssetsUtils.get_icon_full_path_by_asset_name('minimize_fill.png')))
         self.minmum_button.setFixedSize(30, 30)
-        self.minmum_button.setObjectName('titlebar_button')
         self.minmum_button.clicked.connect(self.parent.showMinimized)
         self.main_layout.addWidget(self.minmum_button)
         self.main_layout.addWidget(self.close_button)

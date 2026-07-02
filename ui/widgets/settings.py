@@ -16,6 +16,7 @@ class Settings(QWidget):
         self._ui_init()
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setWindowTitle('设置')
+        self.setObjectName('settings')
 
     def _ui_init(self):
         self.main_layout = QVBoxLayout(self) # 布局

@@ -1,5 +1,5 @@
 QListWidget {
-    color: #FFFFFF;
+    color: white;
     background-color: transparent;
     border: 0px;
     outline: none;   /* 确保 item 获取焦点时没有虚线框 */

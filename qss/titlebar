@@ -1,0 +1,3 @@
+QWidget#titlebar QPushButton{
+    border-radius: 5px;
+}

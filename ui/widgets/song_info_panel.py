@@ -6,23 +6,35 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtMultimedia import QMediaPlayer, QMediaMetaData
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QVBoxLayout, QSizePolicy
 
+from utils.assets_utils import AssetsUtils
+
 
 class SongInfoPanel(QWidget):
 
     def __init__(self,parent=None):
         super().__init__(parent)
         self.metadate=None
-        self.title=None
-        self.artist=None
+        self.title='歌曲名称'
+        self.artist='艺术家'
         self.album=None
         self.cover_image=None
         self._ui_init()
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setObjectName('song_info_panel')
 
     def _ui_init(self):
         self.main_layout = QHBoxLayout(self)
         self._cover_init()
         self._media_info_init()
+
+    def _cover_init(self):
+        '''专辑封面'''
+        self.cover_label = QLabel()
+        self.cover_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.cover_label.setFixedSize(100, 100)
+        self.cover_label.setPixmap(QPixmap(AssetsUtils.get_icon_full_path_by_asset_name('album_line.png'))
+                                   .scaled(self.cover_label.size().width()*0.8,self.cover_label.size().height()*0.8))
+        self.main_layout.addWidget(self.cover_label)
 
     def _media_info_init(self):
         '''歌手和歌曲名'''
@@ -37,12 +49,7 @@ class SongInfoPanel(QWidget):
         self.title_and_artist_layout.addWidget(self.artist_label)
         self.main_layout.addLayout(self.title_and_artist_layout)
 
-    def _cover_init(self):
-        '''专辑封面'''
-        self.cover_label = QLabel()
-        self.cover_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.cover_label.setFixedSize(100, 100)
-        self.main_layout.addWidget(self.cover_label)
+
 
 
     @Slot()

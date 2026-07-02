@@ -20,7 +20,8 @@ class MainWindow(QWidget):
         self._data_manager_init()
         self._window_init() # 窗体初始化
         self._ui_init() # 窗体内UI初始化
-        self.setWindowTitle('Music Player')
+        self.setObjectName('main_window')
+        self.setProperty("theme", "dark")
 
     def _database_init(self):
         DataBaseUtils.init_database()
@@ -90,9 +91,9 @@ class MainWindow(QWidget):
         self.song_info_panel_and_player_controls_layout.setSpacing(0)
         self.song_info_panel_and_player_controls_layout.setContentsMargins(0,0,0,0)
         self.song_info_panel = SongInfoPanel(self)
-        self.song_info_panel.setObjectName('song_info_panel_and_playercontrols')
+
         self.player_controls = PlayerControls(self)
-        self.player_controls.setObjectName('song_info_panel_and_playercontrols')
+
         self.song_info_panel_and_player_controls_layout.addWidget(self.song_info_panel,stretch=1)
         self.song_info_panel_and_player_controls_layout.addWidget(self.player_controls,stretch=2)
 

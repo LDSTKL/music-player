@@ -1,5 +1,6 @@
 QMenu {
     background-color: #656564;
+    border-radius:5px;
 }
 
 QMenu::item {

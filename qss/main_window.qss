@@ -1,0 +1,32 @@
+QWidget{
+    color: white;
+}
+
+QWidget#main_window{
+    background-color: #656564;
+}
+
+QToolTip {
+    background-color: #000000;
+    border: none;
+    color: white;
+}
+
+QPushButton{
+    background-color: transparent;
+}
+
+QPushButton:hover {
+    border: none;
+    background-color: #858585;  /* 或与正常状态相同 */
+}
+
+QPushButton:pressed {
+    /* 按下时：上边距增加，下边距减小，产生向下移动错觉 */
+    margin-top: 1px;
+    margin-bottom: -1px;
+    background-color: #555555;
+}
+
+
+

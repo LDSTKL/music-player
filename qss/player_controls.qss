@@ -1,3 +1,62 @@
-QPushButton#player_control_button{
+QWidget#player_controls{
+    background-color: #3a3329;
+}
+
+QWidget#player_controls QPushButton {
     border-radius: 18px;
+}
+
+/* 水平slider部分 */
+QSlider::groove:horizontal {
+    height: 4px;
+    background-color: #716b65;  /* 轨道背景 */
+    border-radius: 2px;
+}
+
+QSlider::sub-page:horizontal {
+    background-color: #2ABf9E;  /* 已播放部分 */
+    border-radius: 2px;
+}
+
+QSlider::add-page:horizontal {
+    background-color: transparent; /* 未播放部分（通常透明，露出 groove） */
+}
+
+QSlider::handle:horizontal {
+    width: 18px;
+    height: 18px;
+    margin: -7px 0;  /* 让滑块突出轨道 */
+    background-color: #FFFFFF;
+    border-radius: 9px;
+}
+
+QSlider::handle:horizontal:hover {
+    background-color: #EEEEEE;
+}
+
+/* 垂直slider部分 */
+QSlider::groove:vertical {
+    width: 4px;
+    background-color: #333333;  /* 轨道背景 */
+    border-radius: 2px;
+}
+
+QSlider::sub-page:vertical {
+    background-color: transparent;  /* 上方透明 */
+}
+
+QSlider::add-page:vertical {
+    background-color: #2ABf9E;  /* 下方有色 */
+}
+
+QSlider::handle:vertical {
+    height: 12px;
+    width: 12px;
+    margin: 0 -4px;  /* 让滑块水平居中并突出 */
+    background-color: #FFFFFF;
+    border-radius: 6px;
+}
+
+QSlider::handle:vertical:hover {
+    background-color: #EEEEEE;
 }

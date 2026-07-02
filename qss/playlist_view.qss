@@ -1,17 +1,21 @@
 QTableView {
     color: #FFFFFF;
     background-color: #33373B;
-    border: 0px;
+    border: none;
+    gridline-color: transparent;       /* 隐藏网格线 */
+    outline: none; /* 尝试去掉外轮廓 */
 }
-
-
+QTableView::item{
+    border: none;
+}
 QTableView::item:selected {
     background-color: #2ABf9E;
 }
 
+
 QHeaderView::section {
     background-color: #33373B;
-    border: 0px;
+    border: none;
     height: 30px;
 }
 
@@ -21,9 +25,6 @@ QHeaderView::section:hover {
 }
 
 
-QTableView {
-    gridline-color: transparent;       /* 隐藏网格线 */
-}
 QTableView QScrollBar:vertical {
     width: 8px;
     background-color: #656564;         /* 【改】用实色替代 transparent */

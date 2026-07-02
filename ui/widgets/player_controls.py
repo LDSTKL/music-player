@@ -92,6 +92,7 @@ class PlayerControls(QWidget):
         self.curr_music_index = 0
         self.play_modes = ['repeat_line.png','repeat_line.png','repeat_one_line.png','shuffle_line.png']
         self.play_mode = SettingsUtils.get_settings()['play_mode']
+        self.setObjectName('player_controls')
         self._ui_init()
         self._player_init()
         self._volume_slider_init()
@@ -129,13 +130,6 @@ class PlayerControls(QWidget):
         self.play_button.setIconSize(QSize(48, 48))
         self.pause_button.setIconSize(QSize(48, 48))
 
-        self.pause_button.setObjectName('player_control_button')
-        self.play_button.setObjectName('player_control_button')
-        self.prev_media_button.setObjectName('player_control_button')
-        self.next_media_button.setObjectName('player_control_button')
-        self.volume_button.setObjectName('player_control_button')
-        self.play_mode_button.setObjectName('player_control_button')
-
         self.spacer = QSpacerItem(0,0,QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Maximum)
 
         self.controls_layout.addSpacerItem(self.spacer)
@@ -159,38 +153,9 @@ class PlayerControls(QWidget):
 
     def _volume_slider_init(self):
         '''音量控制条'''
-        self.volume_menu = QMenu()
-        self.volume_menu.setStyleSheet('''
-                    background-color: #656564;
-                    color: white;''')
+        self.volume_menu = QMenu(self)
         self.volume_widget = VolumeWidget()
-        self.volume_widget.setStyleSheet('''
-        QSlider::groove:vertical {
-            width: 4px;
-            background-color: #333333;  /* 轨道背景 */
-            border-radius: 2px;
-        }
-        
-        QSlider::sub-page:vertical {
-            background-color: transparent;  /* 上方透明 */
-        }
-        
-        QSlider::add-page:vertical {
-            background-color: #2ABf9E;  /* 下方有色 */
-        }
-        
-        QSlider::handle:vertical {
-            height: 12px;
-            width: 12px;
-            margin: 0 -4px;  /* 让滑块水平居中并突出 */
-            background-color: #FFFFFF;
-            border-radius: 6px;
-        }
-        
-        QSlider::handle:vertical:hover {
-            background-color: #EEEEEE;
-        }
-        ''')
+
         self.volume_widget_action = QWidgetAction(self.volume_menu)
         self.volume_widget_action.setDefaultWidget(self.volume_widget)
         self.volume_menu.addAction(self.volume_widget_action)

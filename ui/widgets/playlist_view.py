@@ -55,8 +55,10 @@ class PlayListView(QWidget):
         self.table_view.verticalHeader().setDefaultSectionSize(30)
         # 实现平滑滚动
         self.table_view.setVerticalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
-
+        # 开启上下文菜单
         self.table_view.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        # 隐藏网格线（物理上移除分隔线）
+        self.table_view.setShowGrid(False)
         self.main_layout.addWidget(self.table_view)
 
     @Slot()
