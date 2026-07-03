@@ -130,16 +130,17 @@ class PlayerControls(QWidget):
         self.play_button.setIconSize(QSize(48, 48))
         self.pause_button.setIconSize(QSize(48, 48))
 
-        self.spacer = QSpacerItem(0,0,QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Maximum)
+        self.left_spacer = QSpacerItem(0,0,QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Maximum)
+        self.right_spacer = QSpacerItem(0,0,QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Maximum)
 
-        self.controls_layout.addSpacerItem(self.spacer)
+        self.controls_layout.addSpacerItem(self.left_spacer)
         self.controls_layout.addWidget(self.play_mode_button)
         self.controls_layout.addWidget(self.prev_media_button)
         self.controls_layout.addWidget(self.play_button)
         self.controls_layout.addWidget(self.pause_button)
         self.controls_layout.addWidget(self.next_media_button)
         self.controls_layout.addWidget(self.volume_button)
-        self.controls_layout.addSpacerItem(self.spacer)
+        self.controls_layout.addSpacerItem(self.right_spacer)
 
         self.main_layout.addLayout(self.controls_layout)
 
@@ -328,7 +329,10 @@ class PlayerControls(QWidget):
                 }''')
             self.play_mode_button.setToolTip('循环关闭')
         conn = DataBaseUtils.get_new_connection()
-        DataBaseUtils.update_settings(conn,play_mode = self.play_mode)
+        try:
+            DataBaseUtils.update_settings(conn,play_mode = self.play_mode)
+        finally:
+            conn.close()
 
 
 

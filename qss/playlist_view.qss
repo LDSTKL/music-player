@@ -5,11 +5,14 @@ QTableView {
     gridline-color: transparent;       /* 隐藏网格线 */
     outline: none; /* 尝试去掉外轮廓 */
 }
-QTableView::item{
-    border: none;
-}
+
 QTableView::item:selected {
     background-color: #2ABf9E;
+}
+
+/* 失去焦点时的选中状态 */
+QTableView::item:selected:!active {
+    color: #FFFFFF;       /* 强制保持白色 */
 }
 
 
