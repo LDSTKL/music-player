@@ -1,9 +1,11 @@
 from PySide6.QtCore import Signal, Slot, Qt, QPoint
+from PySide6.QtGui import QIcon
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QSizePolicy, QSpacerItem, QListWidget, \
-    QInputDialog, QAbstractItemView, QStyledItemDelegate, QMenu
+    QInputDialog, QAbstractItemView, QStyledItemDelegate, QMenu, QHBoxLayout, QLineEdit
 
 from ui.widgets.settings import Settings
+from utils.assets_utils import AssetsUtils
 from utils.database_utils import DataBaseUtils
 
 class CenterAlignDelegate(QStyledItemDelegate):
@@ -17,6 +19,7 @@ class PlayLists(QWidget):
     change_playlist = Signal(int)
     create_playlist_finished = Signal(int)
     delete_playlist_finished = Signal(int) # 歌单的下标
+    search_music = Signal(str)
     def __init__(self,settings:Settings,parent =None):
         super().__init__(parent)
         self.setFixedHeight(350)
@@ -29,6 +32,7 @@ class PlayLists(QWidget):
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setSpacing(0)
         self.main_layout.setContentsMargins(0,0,0,0)
+        self._search_widget_init()
         self._default_list_init()
         self._add_playlist_button_init()
         self._custom_list_init()
@@ -36,9 +40,17 @@ class PlayLists(QWidget):
         self._settings_button_init()
         self._custom_list_item_init()
 
+    def _search_widget_init(self):
+        self.search_line = QLineEdit()
+        self.search_line.setPlaceholderText('搜索歌曲...')
+        self.search_line.setClearButtonEnabled(True)
+        self.search_action = self.search_line.addAction(QIcon(AssetsUtils.get_icon_full_path_by_asset_name("search_3_line.png")), QLineEdit.ActionPosition.TrailingPosition)
+
+
+        self.main_layout.addWidget(self.search_line)
 
     def _default_list_init(self):
-        '''默认列表'''
+        """默认列表"""
         self.my_music = QPushButton('我的音乐')
         self.my_music.setFixedHeight(40)
         self.like = QPushButton('喜欢')
@@ -83,6 +95,9 @@ class PlayLists(QWidget):
 
 
     def _connect_signals_and_slots(self):
+        #搜索框
+        self.search_line.returnPressed.connect(lambda :self.search_music.emit(self.search_line.text()))
+        self.search_action.triggered.connect(lambda :self.search_music.emit(self.search_line.text()))
         #按钮点击
         self.my_music.clicked.connect(lambda index:self.change_playlist.emit(0))
         self.like.clicked.connect(lambda index:self.change_playlist.emit(1))

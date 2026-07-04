@@ -1,3 +1,9 @@
+QLineEdit {
+    height: 40px;
+    background-color: #3a3a3b;
+    border: none;
+}
+
 QListWidget {
     color: white;
     background-color: transparent;

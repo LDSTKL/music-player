@@ -112,6 +112,8 @@ class MainWindow(QWidget):
         self.data_manager.inited_with_settings.connect(self.playlist_view.change_data_model) # 启动应用后首次设置model
         self.data_manager.change_selected_model.connect(self.playlist_view.change_data_model)
         self.data_manager.delete_playlist_finished.connect(self.playlist_view.init_add_to_playlist_actions)  # 删除歌单后更新上下文菜单
+        # 搜索音乐
+        self.play_lists.search_music.connect(self.data_manager.change_search_music_model)
         # 切换播放列表
         self.play_lists.change_playlist.connect(self.data_manager.change_model)
         # 创建播放列表

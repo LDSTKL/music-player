@@ -6,7 +6,7 @@
 from PySide6.QtCore import Slot, Signal, QModelIndex, QSortFilterProxyModel, Qt, QPoint, QEvent
 from PySide6.QtGui import QAction, QStandardItemModel, QColor, QBrush
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QTableView, \
-    QHeaderView, QAbstractItemView, QMenu, QStyledItemDelegate
+    QHeaderView, QAbstractItemView, QMenu, QStyledItemDelegate, QLabel, QVBoxLayout
 
 from commons.enhanced_widget import HoverTableView
 from constants.role_constants import RoleConstants
@@ -31,9 +31,11 @@ class PlayListView(QWidget):
         self._connect_signal_and_slot()
 
     def _ui_init(self):
-        self.main_layout = QHBoxLayout(self)
+        self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(0,0,0,0)
+        self.main_layout.setSpacing(0)
         self._init_table()
+
 
     def _init_table(self):
         self.table_view = HoverTableView()

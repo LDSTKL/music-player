@@ -23,6 +23,9 @@ class DataManager(QWidget):
         self.total_data_model = QStandardItemModel()
         # 设置表头标签
         self.total_data_model.setHorizontalHeaderLabels(["歌曲名", "歌手", "专辑"])
+
+        self.search_music = SearchFilterProxyModel()
+        self.search_music.setSourceModel(self.total_data_model) # 展示搜索结果，不保存到model_list
         self.total_music = HoverProxyModel()
         self.total_music.setSourceModel(self.total_data_model)
         self.favor_music = FavoriteFilterProxyModel()
@@ -106,6 +109,11 @@ class DataManager(QWidget):
     def change_model(self,index:int):
         '''play_lists中用户切换歌单时'''
         self.change_selected_model.emit(self.model_list[index])
+    @Slot()
+    def change_search_music_model(self,keyword:str):
+        '''搜索功能'''
+        self.search_music.set_keyword(keyword)
+        self.change_selected_model.emit(self.search_music)
 
 
     @Slot()
@@ -273,3 +281,28 @@ class PlaylistFilterProxyModel(HoverProxyModel):
         index = self.sourceModel().index(source_row, 0, source_parent)
         music_id = self.sourceModel().data(index, RoleConstants.store_music_id_role)
         return music_id in self.music_ids if music_id is not None else False
+
+
+class SearchFilterProxyModel(HoverProxyModel):
+    '''搜索结果'''
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.keyword = ""
+
+    def set_keyword(self, keyword: str):
+        """设置搜索关键词并刷新过滤"""
+        self.keyword = keyword.lower()
+        self.invalidateFilter()
+
+    def filterAcceptsRow(self, source_row, source_parent) -> bool:
+        if not self.keyword:
+            return True
+
+        # 检查歌曲名、歌手、专辑是否包含关键词
+        for col in range(3):  # 标题、歌手、专辑三列
+            index = self.sourceModel().index(source_row, col, source_parent)
+            text = self.sourceModel().data(index, Qt.DisplayRole)
+            if text and self.keyword in text.lower():
+                return True
+
+        return False
