@@ -81,7 +81,7 @@ class PlayLists(QWidget):
         self.custom_play_lists.setVerticalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
         self.custom_play_lists.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
 
-        self._update_list_height()
+        self.update_list_height()
 
         self.main_layout.addWidget(self.custom_play_lists)
     def _buttom_spacer_init(self):
@@ -119,7 +119,7 @@ class PlayLists(QWidget):
             if len(playlists) > 0:
                 for playlist in playlists:
                     self.custom_play_lists.addItem(playlist[1])
-                self._update_list_height()
+                self.update_list_height()
         finally:
             conn.close()
 
@@ -127,7 +127,7 @@ class PlayLists(QWidget):
     def init_with_changed_settings(self):
         '''用于用户更改扫描目录,清空创建的所有歌单'''
         self.custom_play_lists.clear()
-        self._update_list_height()
+        self.update_list_height()
 
     @Slot()
     def add_new_playlist(self):
@@ -139,13 +139,13 @@ class PlayLists(QWidget):
                 playlist_id = DataBaseUtils.create_playlist(conn,text)
                 self.create_playlist_finished.emit(playlist_id)
                 self.custom_play_lists.addItem(text)
-                self._update_list_height()
+                self.update_list_height()
             finally:
                 conn.close()
 
 
 
-    def _update_list_height(self):
+    def update_list_height(self):
         """根据 item 数量动态计算并设置列表高度"""
         count = self.custom_play_lists.count()
         if count == 0:
@@ -174,5 +174,5 @@ class PlayLists(QWidget):
 
     def _delete_playlist(self,row:int):
         self.custom_play_lists.takeItem(row)
-        self._update_list_height()
+        self.update_list_height()
         self.delete_playlist_finished.emit(row+2)

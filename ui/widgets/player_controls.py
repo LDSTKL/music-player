@@ -146,11 +146,16 @@ class PlayerControls(QWidget):
 
     def _slider_init(self):
         '''音乐进度条'''
+        self.slider_layout = QHBoxLayout()  # 布局
+        self.music_curr_time = QLabel('00:00')
         self.slider= EnhancedSlider(Qt.Orientation.Horizontal)
         self.slider.setSingleStep(1000) # 使用音乐的毫秒数设置进度条的范围,默认的步长为1太小
         self.slider.setPageStep(10000) # 设置后键盘上左右箭头和pageUp,pageDown效果正常了
-
-        self.main_layout.addWidget(self.slider)
+        self.music_total_time = QLabel('00:00')
+        self.slider_layout.addWidget(self.music_curr_time)
+        self.slider_layout.addWidget(self.slider)
+        self.slider_layout.addWidget(self.music_total_time)
+        self.main_layout.addLayout(self.slider_layout)
 
     def _volume_slider_init(self):
         '''音量控制条'''
@@ -179,8 +184,8 @@ class PlayerControls(QWidget):
         self.next_media_button.clicked.connect(self.play_next)
         self.prev_media_button.clicked.connect(self.play_prev)
         # 绑定媒体播放器和音乐进度条
-        self.player.durationChanged.connect(lambda d: self.slider.setRange(0, d))
-        self.player.positionChanged.connect(self.update_slider_when_position_changed)
+        self.player.durationChanged.connect(self.on_duration_changed)
+        self.player.positionChanged.connect(self.update_slider_and_time_label_when_position_changed)
         self.slider.sliderReleased.connect(self.update_player_when_slider_released)
         # self.slider.valueChanged.connect(lambda v: self.player.setPosition(v))
         # 不能用valueChanged,会和self.player.positionChanged出现循环更新的情况
@@ -250,12 +255,27 @@ class PlayerControls(QWidget):
             self.player.setSource(QUrl.fromLocalFile(self.music_list[self.curr_music_index]))
             self.play()
 
+    def on_duration_changed(self,d):
+        total_seconds = int(d / 1000)
+        mins = total_seconds // 60
+        secs = total_seconds % 60
+        minutes = f"{mins:02d}"
+        seconds = f"{secs:02d}"
+        self.music_total_time.setText(minutes+':'+seconds)
+        self.slider.setRange(0, d)
+
     @Slot()
-    def update_slider_when_position_changed(self,p):
+    def update_slider_and_time_label_when_position_changed(self, p):
         '''音乐播放时，滑块移动，实现进度条效果'''
         # 如果用户在拖动滑块,就不随着媒体播放更新滑块,避免滑块乱跳
         if not self.slider.isSliderDown():
             self.slider.setValue(p)
+        total_seconds = int(p / 1000)
+        mins = total_seconds // 60
+        secs = total_seconds % 60
+        minutes = f"{mins:02d}"
+        seconds = f"{secs:02d}"
+        self.music_curr_time.setText(minutes + ':' + seconds)
 
     @Slot()
     def update_player_when_slider_released(self):

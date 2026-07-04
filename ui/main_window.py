@@ -1,6 +1,6 @@
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QWidget, QLabel
+from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QWidget, QLabel, QSizeGrip
 from ui.widgets.data_manager import DataManager
 from ui.widgets.play_lists import PlayLists
 from ui.widgets.player_controls import PlayerControls
@@ -27,6 +27,7 @@ class MainWindow(QWidget):
         # 发送设置已经初始化完成信号
         self.settings_inited.emit(self.settings.setting_scan_dir_lineedit.text())
 
+
     def _database_init(self):
         DataBaseUtils.init_database()
 
@@ -36,6 +37,7 @@ class MainWindow(QWidget):
     def _window_init(self):
         '''初始化窗体'''
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
+        self.setMinimumSize(800, 500)
         self.resize(800, 500)
 
     def _ui_init(self):
@@ -48,6 +50,7 @@ class MainWindow(QWidget):
         self.left_part_init()
         self.right_part_init()
         self._song_info_panel_and_playercontrols_init()
+        self._size_grip_init()
 
 
 
@@ -98,6 +101,17 @@ class MainWindow(QWidget):
         self.song_info_panel_and_player_controls_layout.addWidget(self.player_controls,stretch=2)
 
         self.main_layout.addLayout(self.song_info_panel_and_player_controls_layout)
+
+    def _size_grip_init(self):
+        self.size_grip = QSizeGrip(self)
+        self.size_grip.resize(20, 20)
+        self.size_grip.move(self.width() - 20, self.height() - 20)
+
+    def resizeEvent(self, event):
+        # 保持 size_grip 在右下角
+        self.size_grip.move(self.width() - 20, self.height() - 20)
+        self.play_lists.update_list_height()
+        super().resizeEvent(event)
 
     def _settings_init(self):
         self.settings = Settings()
