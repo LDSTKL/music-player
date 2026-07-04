@@ -18,10 +18,14 @@ class MainWindow(QWidget):
         super().__init__()
         self._database_init() # 数据库初始化
         self._data_manager_init()
+        self._settings_init()
         self._window_init() # 窗体初始化
         self._ui_init() # 窗体内UI初始化
         self.setObjectName('main_window')
         self.setProperty("theme", "dark")
+        self._connect_signal_and_slot()
+        # 发送设置已经初始化完成信号
+        self.settings_inited.emit(self.settings.setting_scan_dir_lineedit.text())
 
     def _database_init(self):
         DataBaseUtils.init_database()
@@ -39,18 +43,14 @@ class MainWindow(QWidget):
         self.main_layout = QVBoxLayout(self)  # 主要布局,垂直布局
         self.main_layout.setSpacing(0)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
-        self._settings_init()
+
         self.up_part_init()
         self.left_part_init()
         self.right_part_init()
-
         self._song_info_panel_and_playercontrols_init()
 
 
-        self._connect_signal_and_slot()
 
-        # 发送设置以完成信号
-        self.settings_inited.emit(self.settings.setting_scan_dir_lineedit.text())
     def up_part_init(self):
         '''左上角+右上角UI初始化'''
         self.up_part_layout = QHBoxLayout()
@@ -67,7 +67,7 @@ class MainWindow(QWidget):
 
         self.left_title_bar = TitleBar(self,True)
         self.left_part_layout.addWidget(self.left_title_bar)
-        self.play_lists= PlayLists(self.settings)
+        self.play_lists= PlayLists(self.settings,self)
         self.left_part_layout.addWidget(self.play_lists)
 
         self.up_part_layout.addLayout(self.left_part_layout,stretch=1)

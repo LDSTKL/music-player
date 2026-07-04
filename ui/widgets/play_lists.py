@@ -20,13 +20,14 @@ class PlayLists(QWidget):
     create_playlist_finished = Signal(int)
     delete_playlist_finished = Signal(int) # 歌单的下标
     search_music = Signal(str)
-    def __init__(self,settings:Settings,parent =None):
+    def __init__(self,settings:Settings,parent):
         super().__init__(parent)
-        self.setFixedHeight(350)
         self.settings_widget = settings
+        self.parent = parent
         self._ui_init()
         self._connect_signals_and_slots()
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setObjectName('play_lists')
 
     def _ui_init(self):
         self.main_layout = QVBoxLayout(self)
@@ -156,7 +157,8 @@ class PlayLists(QWidget):
             # 考虑列表边框和间距
             height = item_height * count + 4  # 4px 为安全边距
 
-        self.custom_play_lists.setFixedHeight(min(height, 190))
+        playlist_max_height = self.parent.height() - 40 - 120 -40*5
+        self.custom_play_lists.setFixedHeight(min(height, playlist_max_height))
 
     @Slot()
     def _show_context_menu(self, pos: QPoint):

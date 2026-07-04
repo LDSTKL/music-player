@@ -1,4 +1,4 @@
-QLineEdit {
+QWidget#play_lists QLineEdit {
     height: 40px;
     background-color: #3a3a3b;
     border: none;

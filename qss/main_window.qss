@@ -1,4 +1,4 @@
-QWidget{
+*{
     color: white;
 }
 

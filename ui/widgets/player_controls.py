@@ -92,7 +92,10 @@ class PlayerControls(QWidget):
         self.curr_music_index = 0
         self.play_modes = ['repeat_line.png','repeat_line.png','repeat_one_line.png','shuffle_line.png']
         self.play_mode = SettingsUtils.get_settings()['play_mode']
+        self.play_button_icon = QIcon(AssetsUtils.get_icon_full_path_by_asset_name('play_line.png'))
+        self.pause_button_icon = QIcon(AssetsUtils.get_icon_full_path_by_asset_name('pause_line.png'))
         self.setObjectName('player_controls')
+        self.setFixedHeight(120)
         self._ui_init()
         self._player_init()
         self._volume_slider_init()
@@ -111,24 +114,22 @@ class PlayerControls(QWidget):
     def _controls_init(self):
         '''音乐控制'''
         self.controls_layout = QHBoxLayout() # 布局
-        self.pause_button = QPushButton(QIcon(AssetsUtils.get_icon_full_path_by_asset_name('pause_line.png')),'')
-        self.pause_button.hide()
-        self.play_button = QPushButton(QIcon(AssetsUtils.get_icon_full_path_by_asset_name('play_line.png')),'')
+
+        self.play_or_pause_button = QPushButton(self.play_button_icon, '')
         self.prev_media_button = QPushButton(QIcon(AssetsUtils.get_icon_full_path_by_asset_name('skip_previous_line.png')),'')
         self.next_media_button = QPushButton(QIcon(AssetsUtils.get_icon_full_path_by_asset_name('skip_forward_line.png')),'')
         self.volume_button = QPushButton(QIcon(AssetsUtils.get_icon_full_path_by_asset_name('volume_line.png')),'')
         self.play_mode_button = QPushButton()
         self.change_play_mode(True)
 
-        self.pause_button.setFixedSize(48,48)
-        self.play_button.setFixedSize(48,48)
+
+        self.play_or_pause_button.setFixedSize(48, 48)
         self.prev_media_button.setFixedSize(36,36)
         self.next_media_button.setFixedSize(36,36)
         self.volume_button.setFixedSize(36,36)
         self.play_mode_button.setFixedSize(36,36)
 
-        self.play_button.setIconSize(QSize(48, 48))
-        self.pause_button.setIconSize(QSize(48, 48))
+        self.play_or_pause_button.setIconSize(QSize(48, 48))
 
         self.left_spacer = QSpacerItem(0,0,QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Maximum)
         self.right_spacer = QSpacerItem(0,0,QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Maximum)
@@ -136,8 +137,7 @@ class PlayerControls(QWidget):
         self.controls_layout.addSpacerItem(self.left_spacer)
         self.controls_layout.addWidget(self.play_mode_button)
         self.controls_layout.addWidget(self.prev_media_button)
-        self.controls_layout.addWidget(self.play_button)
-        self.controls_layout.addWidget(self.pause_button)
+        self.controls_layout.addWidget(self.play_or_pause_button)
         self.controls_layout.addWidget(self.next_media_button)
         self.controls_layout.addWidget(self.volume_button)
         self.controls_layout.addSpacerItem(self.right_spacer)
@@ -175,8 +175,7 @@ class PlayerControls(QWidget):
 
     def _connect_slot(self):
         # 绑定按钮功能
-        self.pause_button.clicked.connect(self.pause)
-        self.play_button.clicked.connect(self.play)
+        self.play_or_pause_button.clicked.connect(self.play_or_pause)
         self.next_media_button.clicked.connect(self.play_next)
         self.prev_media_button.clicked.connect(self.play_prev)
         # 绑定媒体播放器和音乐进度条
@@ -204,20 +203,26 @@ class PlayerControls(QWidget):
 
         self.play_mode_button.clicked.connect(self.change_play_mode)
 
-
+    @Slot()
+    def play_or_pause(self):
+        '''主要用于play_or_pause_button按钮的功能'''
+        if self.player.mediaStatus() == QMediaPlayer.MediaStatus.NoMedia:
+            return
+        if self.player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
+            self.pause()
+        else:
+            self.play()
     @Slot()
     def pause(self):
         '''暂停'''
         self.player.pause()
-        self.play_button.show()
-        self.pause_button.hide()
+        self.play_or_pause_button.setIcon(self.play_button_icon)
 
     @Slot()
     def play(self):
         '''播放'''
         self.player.play()
-        self.pause_button.show()
-        self.play_button.hide()
+        self.play_or_pause_button.setIcon(self.pause_button_icon)
 
 
     def play_random(self):

@@ -22,7 +22,6 @@ class PlayListView(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setFixedHeight(350)
         self.proxy_data_model: QSortFilterProxyModel = None
         self.curr_music_list = []
         self.add_to_playlist_actions=[]

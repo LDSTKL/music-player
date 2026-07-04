@@ -21,6 +21,7 @@ class SongInfoPanel(QWidget):
         self._ui_init()
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setObjectName('song_info_panel')
+        self.setFixedHeight(120)
 
     def _ui_init(self):
         self.main_layout = QHBoxLayout(self)
@@ -33,7 +34,7 @@ class SongInfoPanel(QWidget):
         self.cover_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.cover_label.setFixedSize(100, 100)
         self.cover_label.setPixmap(QPixmap(AssetsUtils.get_icon_full_path_by_asset_name('album_line.png'))
-                                   .scaled(self.cover_label.size().width()*0.8,self.cover_label.size().height()*0.8))
+                                   .scaled(self.cover_label.size().width(),self.cover_label.size().height()))
         self.main_layout.addWidget(self.cover_label)
 
     def _media_info_init(self):

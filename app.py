@@ -19,6 +19,6 @@ combined_qss = load_qss_files()
 app = QApplication()
 window = MainWindow()
 
-app.setStyleSheet(combined_qss)
+window.setStyleSheet(combined_qss)
 window.show()
 sys.exit(app.exec())
