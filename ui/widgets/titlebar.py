@@ -1,5 +1,5 @@
 import PySide6
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Slot
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QLabel, QSpacerItem, QSizePolicy
 
@@ -13,8 +13,11 @@ class TitleBar(QWidget):
         self.parent = parent
         self.mouse_pressed = False  # 用于实现窗口拖拽
         self.is_left = is_left
+        self.maxmum_icon = QIcon(AssetsUtils.get_icon_full_path_by_asset_name('fullscreen_fill.png'))
+        self.exit_maxmum_icon = QIcon(AssetsUtils.get_icon_full_path_by_asset_name('fullscreen_exit_fill.png'))
         self._ui_init()
         self.setObjectName('titlebar')
+
 
     def _ui_init(self):
         '''初始化UI'''
@@ -42,8 +45,26 @@ class TitleBar(QWidget):
         self.minmum_button.setIcon(QIcon(AssetsUtils.get_icon_full_path_by_asset_name('minimize_fill.png')))
         self.minmum_button.setFixedSize(30, 30)
         self.minmum_button.clicked.connect(self.parent.showMinimized)
+        self.maxmum_button = QPushButton()
+        self.maxmum_button.setIcon(self.exit_maxmum_icon if self.parent.isMaximized() else self.maxmum_icon)
+        self.maxmum_button.setFixedSize(30, 30)
+        self.maxmum_button.clicked.connect(self._toggle_maximize)
         self.main_layout.addWidget(self.minmum_button)
+        self.main_layout.addWidget(self.maxmum_button)
         self.main_layout.addWidget(self.close_button)
+
+
+    @Slot()
+    def _toggle_maximize(self):
+        if self.parent.isMaximized():
+            self.parent.showNormal()
+            self.maxmum_button.setIcon(self.maxmum_icon)
+        else:
+            self.parent.showMaximized()
+            self.maxmum_button.setIcon(self.exit_maxmum_icon)
+
+
+
 
 
     def mousePressEvent(self, event: PySide6.QtGui.QMouseEvent, /) -> None:

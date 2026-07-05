@@ -1,8 +1,0 @@
-QWidget#settings{
-    background-color: #656564;
-
-}
-
-QWidget#settings QLineEdit{
-    color: black;
-}

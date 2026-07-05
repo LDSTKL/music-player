@@ -46,6 +46,8 @@ class SongInfoPanel(QWidget):
         self.title_label.setToolTip(self.title)
         self.artist_label = QLabel(self.artist)
         self.artist_label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self.title_label.setObjectName('title_label')
+        self.artist_label.setObjectName('artist_label')
         self.title_and_artist_layout.addWidget(self.title_label)
         self.title_and_artist_layout.addWidget(self.artist_label)
         self.main_layout.addLayout(self.title_and_artist_layout)
