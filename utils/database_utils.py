@@ -2,6 +2,7 @@ import sqlite3
 
 
 class DataBaseUtils:
+    '''数据库操作工具类，封装了操作数据库表的方法'''
     db_path = "music_library.db"
 
     @classmethod

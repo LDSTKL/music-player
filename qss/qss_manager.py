@@ -1,3 +1,7 @@
+'''
+管理所有样式
+'''
+
 main_window ='''
 *{{
     color: {font_color};
@@ -273,7 +277,6 @@ dark_theme = {
     'list_and_table_handle_hover_color': '#7c7c7c', # 鼠标放在list、table滑块上悬停的颜色
 
     # 没有直接继承父组件的单独组件的样式设置
-    'test':1,
 }
 
 

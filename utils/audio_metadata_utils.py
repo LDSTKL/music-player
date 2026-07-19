@@ -2,6 +2,7 @@ from tinytag import TinyTag
 import os
 
 class AudioMetaDataUtils:
+    '''mp3文件元信息读取工具类'''
     @classmethod
     def get_music_meta(cls,file_path: str) -> dict:
         """

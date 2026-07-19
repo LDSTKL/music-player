@@ -9,6 +9,9 @@ from utils.settings_utils import SettingsUtils
 
 
 class Settings(QWidget):
+    '''
+    设置控件
+    '''
     scan_dir_changed = Signal(str)
     def __init__(self,parent=None):
         super().__init__(parent)

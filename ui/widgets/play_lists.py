@@ -16,6 +16,7 @@ class CenterAlignDelegate(QStyledItemDelegate):
 
 
 class PlayLists(QWidget):
+    '''歌单控件'''
     change_playlist = Signal(int)
     create_playlist_finished = Signal(int)
     delete_playlist_finished = Signal(int) # 歌单的下标

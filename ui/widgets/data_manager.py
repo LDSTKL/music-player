@@ -13,6 +13,7 @@ from utils.database_utils import DataBaseUtils
 
 
 class DataManager(QWidget):
+    '''歌曲数据模型管理'''
     inited_with_settings = Signal(QSortFilterProxyModel)
     change_selected_model = Signal(QSortFilterProxyModel)
     delete_playlist_finished = Signal()

@@ -10,6 +10,7 @@ from utils.assets_utils import AssetsUtils
 
 
 class SongInfoPanel(QWidget):
+    '''歌曲信息展示控件'''
 
     def __init__(self,parent=None):
         super().__init__(parent)

@@ -2,7 +2,9 @@ from PySide6.QtCore import Qt, QSortFilterProxyModel
 from PySide6.QtGui import QStandardItemModel, QColor
 from PySide6.QtWidgets import QTableView
 
-
+'''
+实现table组件鼠标hover选中一行的效果
+'''
 class HoverTableModel(QStandardItemModel):
     def __init__(self, parent=None):
         super().__init__(parent)

@@ -7,6 +7,7 @@ from utils.assets_utils import AssetsUtils
 
 
 class TitleBar(QWidget):
+    '''顶部导航栏'''
     def __init__(self,parent,is_left:bool):
         super().__init__(parent)
         self.setFixedHeight(40)

@@ -59,6 +59,9 @@ class EnhancedSlider(QSlider):
             super().mousePressEvent(event)
 
 class VolumeWidget(QWidget):
+    '''
+    音量调整控件
+    '''
     def __init__(self,parent =None):
         super().__init__(parent)
         self.main_layout = QVBoxLayout(self)
@@ -84,6 +87,7 @@ class VolumeWidget(QWidget):
 
 
 class PlayerControls(QWidget):
+    '''音乐控制控件'''
     metadata_changed = Signal(QMediaPlayer)
 
     def __init__(self,parent=None):

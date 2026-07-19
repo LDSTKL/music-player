@@ -2,7 +2,7 @@ from utils.database_utils import DataBaseUtils
 
 
 class SettingsUtils:
-    '''在database_utils封装对设置的操作'''
+    '''在database_utils基础上封装对设置的操作'''
     __settings = None
     @classmethod
     def get_settings(cls):

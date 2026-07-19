@@ -16,6 +16,9 @@ from utils.database_utils import DataBaseUtils
 
 
 class PlayListView(QWidget):
+    '''
+    歌曲列表
+    '''
     play_selected = Signal(str, list)
     add_to_playlist = Signal(int,int) # 前者是音乐id,后者是歌单下标
     remove_from_playlist = Signal(int,int) # 前者是音乐id,后者是歌单id

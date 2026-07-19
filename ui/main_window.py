@@ -12,6 +12,7 @@ from utils.database_utils import DataBaseUtils
 
 
 class MainWindow(QWidget):
+    '''主窗口'''
     settings_inited = Signal(str)
 
     def __init__(self):
