@@ -80,7 +80,7 @@ class DataManager(QWidget):
         conn = DataBaseUtils.get_new_connection()
         try:
             DataBaseUtils.clear_all_data(conn)
-            self.total_data_model.clear()
+            self.total_data_model.removeRows(0, self.total_data_model.rowCount())
             self.init_with_settings(scan_path)
         finally:
             conn.close()
